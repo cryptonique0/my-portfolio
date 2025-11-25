@@ -1,0 +1,112 @@
+{
+  "caseStudies": [
+    {
+      "id": 1,
+      "title": "Community Growth & Stabilization",
+      "client": "DecentraHub",
+      "period": "2023-2024",
+      "heroMetrics": {
+        "growth": {
+          "label": "Member Growth",
+          "before": "50K",
+          "after": "150K"
+        },
+        "sentiment": {
+          "value": "85%",
+          "label": "Sentiment Score"
+        },
+        "activeUsers": {
+          "value": "+250%",
+          "label": "Active Users"
+        },
+        "ambassadors": {
+          "value": "100+",
+          "label": "Ambassadors"
+        }
+      },
+      "challenge": "Protocol faced declining community engagement and negative sentiment during bear market. Members were leaving, Discord activity dropped 60%, and trust was eroding.",
+      "solution": "Implemented comprehensive engagement strategy with daily AMAs, weekly challenges, transparent communication, and launched ambassador program. Created educational content series and implemented data-driven sentiment tracking.",
+      "results": [
+        "Grew community from 50K to 150K members (200% growth)",
+        "Increased daily active users by 250%",
+        "Achieved 85% positive sentiment score",
+        "Created 100+ ambassador network"
+      ],
+      "technologiesAndSkills": [
+        "Discord",
+        "Analytics",
+        "Content Strategy",
+        "Leadership"
+      ],
+      "testimonial": "Cryptonique transformed our community from 50K to 150K members in just 12 months. Their strategic approach to engagement and crisis management was instrumental in maintaining community trust during volatile market periods.",
+      "testimonialAuthor": {
+        "name": "Sarah Chen",
+        "role": "Founder & CEO",
+        "company": "DecentraHub",
+        "rating": 4.3
+      }
+    }
+  ],
+  "testimonials": [
+    {
+      "id": 1,
+      "name": "Sarah Chen",
+      "role": "Founder & CEO",
+      "company": "DecentraHub",
+      "content": "Cryptonique transformed our community from 50K to 150K members in just 12 months. Their strategic approach to engagement and crisis management was instrumental in maintaining community trust during volatile market periods. Exceptional expertise across Discord moderation, community analytics, and content strategy.",
+      "avatar": "SC",
+      "rating": 4.3,
+      "skills": ["Discord Moderation", "Analytics", "Content Strategy", "Leadership"]
+    },
+    {
+      "id": 2,
+      "name": "Marcus Rodriguez",
+      "role": "Head of Operations",
+      "company": "CryptoSphere",
+      "content": "Outstanding project manager. Delivered all our major protocol upgrades on time and 40% faster than expected. Their ability to coordinate cross-functional teams and communicate clearly is exceptional.",
+      "avatar": "MR",
+      "rating": 5,
+      "skills": ["Project Management", "Leadership", "Communication"]
+    },
+    {
+      "id": 3,
+      "name": "Alex Thompson",
+      "role": "Community Lead",
+      "company": "BlockchainVentures",
+      "content": "The educational content series created by Cryptonique went viral with 2M+ views. Their understanding of community dynamics and ability to create engaging narratives is truly impressive.",
+      "avatar": "AT",
+      "rating": 5,
+      "skills": ["Content Creation", "Community Management", "Storytelling"]
+    },
+    {
+      "id": 4,
+      "name": "Elena Vasquez",
+      "role": "Marketing Director",
+      "company": "TechWeb3 Labs",
+      "content": "One of the best community strategists I've worked with. They implemented data-driven engagement strategies that increased our community participation rate from 15% to 45% within 6 months.",
+      "avatar": "EV",
+      "rating": 5,
+      "skills": ["Strategy", "Data Analytics", "Community Growth"]
+    },
+    {
+      "id": 5,
+      "name": "James Liu",
+      "role": "CTO",
+      "company": "Protocol Finance",
+      "content": "Cryptonique's ability to bridge the gap between technical teams and the community is invaluable. They reduced support response times from 24 hours to just 2 hours while maintaining quality.",
+      "avatar": "JL",
+      "rating": 5,
+      "skills": ["Technical Communication", "Support Management", "Problem Solving"]
+    },
+    {
+      "id": 6,
+      "name": "Priya Patel",
+      "role": "Business Development",
+      "company": "Blockchain Ventures",
+      "content": "Exceptional at building relationships and managing stakeholder expectations. Their ambassador program grew to 100+ active members and created a strong advocacy network for our projects.",
+      "avatar": "PP",
+      "rating": 5,
+      "skills": ["Relationship Building", "Ambassador Program", "Network Development"]
+    }
+  ]
+}

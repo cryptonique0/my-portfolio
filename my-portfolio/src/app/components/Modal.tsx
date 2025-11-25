@@ -52,7 +52,7 @@ const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
     >
       <div
         ref={modalRef}
-        className="bg-gradient-to-br from-[#0a1128] to-[#1c1c39] border border-blue-500/50 rounded-lg
+  className="bg-linear-to-br from-[#0a1128] to-[#1c1c39] border border-blue-500/50 rounded-lg
                  w-full max-w-md max-h-[80vh] overflow-y-auto animate-[slideIn_0.3s_ease-out]
                  shadow-xl shadow-blue-500/20"
       >
