@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react'
 import { useAccount, useDisconnect, useSignMessage, useConnect } from 'wagmi'
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
 import NetworkInfo from './components/NetworkInfo'
+import StatusBar from './components/StatusBar'
 import { formatAddress } from './lib/format'
 
 export default function App() {
@@ -39,7 +40,8 @@ export default function App() {
     <div style={{ fontFamily: 'system-ui, sans-serif', padding: 24 }}>
       <h1>WCT DApp (WalletConnect on Celo Alfajores)</h1>
 
-      <div style={{ marginTop: 12 }}>
+  <StatusBar />
+  <div style={{ marginTop: 12 }}>
         {isConnected ? (
           <div>
             <div>Connected address: {formatAddress(address)}</div>
