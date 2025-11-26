@@ -1,10 +1,13 @@
 import React, { useState } from 'react'
-import { useAccount, useDisconnect, useSignMessage } from 'wagmi'
+import './App.css'
+import { useAccount, useDisconnect, useSignMessage, useConnect } from 'wagmi'
+import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
 
 export default function App() {
   const { address, isConnected } = useAccount()
   const { disconnect } = useDisconnect()
   const { signMessageAsync } = useSignMessage()
+  const { connect, connectors, error, isLoading, pendingConnector } = useConnect()
   const [sig, setSig] = useState(null)
 
   async function onSign() {
@@ -18,9 +21,13 @@ export default function App() {
     }
   }
 
+  const wcConnector = connectors.find((c) => c instanceof WalletConnectConnector)
+
+  const connectorsReady = connectors && connectors.length > 0
+
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', padding: 24 }}>
-      <h1>WCT DApp (WalletConnect)</h1>
+      <h1>WCT DApp (WalletConnect on Celo Alfajores)</h1>
 
       <div style={{ marginTop: 12 }}>
         {isConnected ? (
@@ -38,18 +45,24 @@ export default function App() {
           </div>
         ) : (
           <div>
-            <p>No wallet connected. Click Connect to open WalletConnect modal.</p>
-            <button
-              onClick={() => {
-                // Opening the modal is handled by the Web3Modal UI automatically when connectors are used.
-                // Using Wagmi/Connect UI or a custom button that calls connect would be alternative.
-                // We can simulate by triggering window.dispatchEvent for the web3modal open event, but
-                // the Web3Modal UI is automatically available via the Web3Modal component in main.jsx.
-                alert('Open the browser WalletConnect modal via the Connect UI in the top-right provided by Web3Modal.')
-              }}
-            >
-              Connect (open modal)
-            </button>
+            <p>No wallet connected.</p>
+            <div>
+              {connectors.map((connector) => (
+                <button
+                  key={connector.id}
+                  onClick={() => connect({ connector })}
+                  disabled={!connector.ready || isLoading}
+                  style={{ marginRight: 8 }}
+                >
+                  {connector.name}
+                  {isLoading && connector.id === pendingConnector?.id && ' (connecting)'}
+                </button>
+              ))}
+            </div>
+            {error && <div style={{ color: 'red', marginTop: 8 }}>{error.message}</div>}
+            <div style={{ marginTop: 8 }}>
+              <small>Tip: Use a WalletConnect-compatible wallet and choose the WalletConnect option.</small>
+            </div>
           </div>
         )}
       </div>
