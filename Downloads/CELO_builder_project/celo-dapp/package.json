@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "description": "Minimal Celo dApp scaffold for contest (SimplePayments)",
   "scripts": {
-    "build": "echo \"No build configured yet\"",
-    "deploy:alfajores": "node scripts/deploy.js"
+    "build": "npx hardhat compile",
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy:alfajores": "npx hardhat run scripts/deploy.js --network alfajores"
   },
   "devDependencies": {
     "hardhat": "^2.16.0",

@@ -1,28 +1,16 @@
-// Minimal Hardhat-style deployment script that works if configured with provider and private key.
-// This script is intentionally simple: it deploys SimplePayments and prints the address.
-const { ethers } = require("ethers");
-const fs = require("fs");
+// Hardhat deployment script that uses the Hardhat Runtime Environment (hre).
+// Usage (local): npx hardhat run scripts/deploy.js --network alfajores
+const hre = require("hardhat");
 
 async function main() {
-  // Use environment variables: CELO_RPC and PRIVATE_KEY
-  const rpc = process.env.CELO_RPC || "https://alfajores-forno.celo-testnet.org";
-  const privateKey = process.env.PRIVATE_KEY;
-  if (!privateKey) {
-    console.error("Please set PRIVATE_KEY environment variable (test key) to deploy");
-    process.exit(1);
-  }
+  const [deployer] = await hre.ethers.getSigners();
+  console.log("Deploying SimplePayments with account:", deployer.address);
 
-  const provider = new ethers.providers.JsonRpcProvider(rpc);
-  const wallet = new ethers.Wallet(privateKey, provider);
-
-  const abi = JSON.parse(fs.readFileSync("./artifacts/SimplePayments.abi.json", "utf8"));
-  const bytecode = fs.readFileSync("./artifacts/SimplePayments.bytecode.txt", "utf8");
-
-  const factory = new ethers.ContractFactory(abi, bytecode, wallet);
-  console.log("Deploying SimplePayments from", wallet.address);
-  const contract = await factory.deploy();
+  const Factory = await hre.ethers.getContractFactory("SimplePayments");
+  const contract = await Factory.deploy();
   await contract.deployed();
-  console.log("SimplePayments deployed at:", contract.address);
+
+  console.log("SimplePayments deployed to:", contract.address);
 }
 
 main().catch((err) => {
