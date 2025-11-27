@@ -15,6 +15,17 @@ export default function TransactionDemo({ tokenAddress }) {
   const [to, setTo] = useState('')
   const [transferAmount, setTransferAmount] = useState('0.001')
 
+  // Validation helpers
+  const isAddress = (v) => /^0x[a-fA-F0-9]{40}$/.test(v.trim())
+  const isPositiveNumber = (v) => {
+    if (!v) return false
+    return /^\d*\.?\d+$/.test(v) && parseFloat(v) > 0
+  }
+
+  const approveAddressValid = isAddress(spender)
+  const approveAmountValid = isPositiveNumber(approveAmount)
+  const transferAddressValid = isAddress(to)
+  const transferAmountValid = isPositiveNumber(transferAmount)
   useEffect(() => {
     async function load() {
       if (!tokenAddress) return
@@ -33,20 +44,22 @@ export default function TransactionDemo({ tokenAddress }) {
   }, [tokenAddress, publicClient])
 
   const approveArgs = useMemo(() => {
+    if (!approveAddressValid || !approveAmountValid) return undefined
     try {
       return [spender, parseUnits(approveAmount || '0', decimals)]
     } catch {
       return undefined
     }
-  }, [spender, approveAmount, decimals])
+  }, [spender, approveAmount, decimals, approveAddressValid, approveAmountValid])
 
   const transferArgs = useMemo(() => {
+    if (!transferAddressValid || !transferAmountValid) return undefined
     try {
       return [to, parseUnits(transferAmount || '0', decimals)]
     } catch {
       return undefined
     }
-  }, [to, transferAmount, decimals])
+  }, [to, transferAmount, decimals, transferAddressValid, transferAmountValid])
 
   const { config: approveConfig, error: approvePrepError } = usePrepareContractWrite({
     address: tokenAddress,
@@ -92,15 +105,24 @@ export default function TransactionDemo({ tokenAddress }) {
             onChange={(e) => setApproveAmount(e.target.value)}
             style={{ width: 160, padding: 6, borderRadius: 6, border: '1px solid #ccc' }}
           />
-          <button onClick={() => writeApprove?.()} disabled={!writeApprove || isApproving || approveMining}>
+          <button
+            onClick={() => writeApprove?.()}
+            disabled={!writeApprove || isApproving || approveMining || !approveAddressValid || !approveAmountValid}
+          >
             {isApproving || approveMining ? 'Approving…' : 'Approve'}
           </button>
         </div>
+        {(!approveAddressValid || !approveAmountValid) && (
+          <div style={{ marginTop: 8, color: '#b45309' }}>
+            {!approveAddressValid && 'Invalid spender address. '}
+            {!approveAmountValid && 'Enter a positive amount.'}
+          </div>
+        )}
         {(approvePrepError || approveError) && (
           <div style={{ marginTop: 8, color: 'red' }}>{(approvePrepError || approveError)?.message}</div>
         )}
         {approveSuccess && (
-          <div style={{ marginTop: 8, color: 'green' }}>Approve tx confirmed: {approveTx?.hash}</div>
+          <TxSuccess hash={approveTx?.hash} label="Approve" />
         )}
       </div>
 
@@ -121,20 +143,48 @@ export default function TransactionDemo({ tokenAddress }) {
             onChange={(e) => setTransferAmount(e.target.value)}
             style={{ width: 160, padding: 6, borderRadius: 6, border: '1px solid #ccc' }}
           />
-          <button onClick={() => writeTransfer?.()} disabled={!writeTransfer || isTransferring || transferMining}>
+          <button
+            onClick={() => writeTransfer?.()}
+            disabled={!writeTransfer || isTransferring || transferMining || !transferAddressValid || !transferAmountValid}
+          >
             {isTransferring || transferMining ? 'Transferring…' : 'Transfer'}
           </button>
         </div>
+        {(!transferAddressValid || !transferAmountValid) && (
+          <div style={{ marginTop: 8, color: '#b45309' }}>
+            {!transferAddressValid && 'Invalid recipient address. '}
+            {!transferAmountValid && 'Enter a positive amount.'}
+          </div>
+        )}
         {(transferPrepError || transferError) && (
           <div style={{ marginTop: 8, color: 'red' }}>{(transferPrepError || transferError)?.message}</div>
         )}
         {transferSuccess && (
-          <div style={{ marginTop: 8, color: 'green' }}>Transfer tx confirmed: {transferTx?.hash}</div>
+          <TxSuccess hash={transferTx?.hash} label="Transfer" />
         )}
       </div>
 
       <div style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
         Demo only—double-check addresses and amounts. You’ll confirm in your wallet before anything is sent.
+      </div>
+    </div>
+  )
+}
+
+function TxSuccess({ hash, label }) {
+  if (!hash) return null
+  const explorer = `https://explorer.celo.org/alfajores/tx/${hash}`
+  function copy() {
+    navigator.clipboard.writeText(hash).catch(() => {})
+  }
+  return (
+    <div style={{ marginTop: 8, color: 'green' }}>
+      {label} tx confirmed: {hash}
+      <div style={{ marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button onClick={copy} style={{ padding: '4px 8px' }}>Copy hash</button>
+        <a href={explorer} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>
+          View on Explorer
+        </a>
       </div>
     </div>
   )

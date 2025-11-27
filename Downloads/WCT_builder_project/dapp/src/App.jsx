@@ -1,6 +1,5 @@
-import React, { useState } from 'react'
-import './App.css'
 import React, { useMemo, useState } from 'react'
+import './App.css'
 import { useAccount, useDisconnect, useSignMessage, useConnect } from 'wagmi'
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
 import NetworkInfo from './components/NetworkInfo'
