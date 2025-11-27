@@ -1,0 +1,80 @@
+name: Hardhat deploy & verify
+
+on:
+  push:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: ./dapp
+        run: |
+          npm ci
+
+      - name: Compile
+        working-directory: ./dapp
+        run: |
+          npx hardhat compile
+
+      - name: Deploy to Sepolia (if secrets present)
+        if: ${{ secrets.DEPLOYER_PRIVATE_KEY && secrets.SEPOLIA_RPC_URL }}
+        working-directory: ./dapp
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+        run: |
+          npx hardhat run scripts/deploy.js --network sepolia
+
+      - name: Verify deployed contract on Etherscan (if api key present)
+        if: ${{ secrets.ETHERSCAN_API_KEY && secrets.DEPLOYER_PRIVATE_KEY && secrets.SEPOLIA_RPC_URL }}
+        working-directory: ./dapp
+        env:
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: |
+          set -e
+          if [ ! -f .deploy_address ]; then
+            echo "No .deploy_address file found; cannot verify"
+            exit 1
+          fi
+          ADDRESS=$(cat .deploy_address | tr -d '\n' )
+          echo "Verifying address: $ADDRESS"
+          npx hardhat verify --network sepolia $ADDRESS || true
+          # write a small verification artifact to upload to the release later
+          echo "https://sepolia.etherscan.io/address/$ADDRESS" > verification.txt
+
+      - name: Build frontend and package artifacts
+        working-directory: ./dapp
+        run: |
+          npm run build
+          if [ -d dist ]; then zip -r dist.zip dist; else echo "No dist folder found"; fi
+
+      - name: Upload verification and build artifacts to release (if release context)
+        if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./dapp/verification.txt
+          asset_name: verification.txt
+          asset_content_type: text/plain
+
+      - name: Upload build artifact (workflow artifact)
+        uses: actions/upload-artifact@v3
+        with:
+          name: dapp-dist
+          path: ./dapp/dist.zip
+        

@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "hh": "hardhat",
+    "deploy:localhost": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
+    "verify:sepolia": "hardhat verify --network sepolia"
   },
   "dependencies": {
     "ethers": "^6.10.0",
@@ -17,6 +21,10 @@
   },
   "devDependencies": {
     "vite": "^5.0.0",
-    "@vitejs/plugin-react": "^5.0.0"
+    "@vitejs/plugin-react": "^5.0.0",
+    "hardhat": "^2.18.0",
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "dotenv": "^16.0.0",
+    "@openzeppelin/contracts": "^4.9.3"
   }
 }

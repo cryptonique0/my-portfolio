@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useAccount, usePublicClient, usePrepareContractWrite, useContractWrite, useWaitForTransaction } from 'wagmi'
 import { erc20Abi } from '../abi/erc20'
+import { rewardsAbi } from '../abi/rewards'
 import { parseUnits } from 'viem'
 
 export default function TransactionDemo({ tokenAddress }) {
@@ -14,6 +15,8 @@ export default function TransactionDemo({ tokenAddress }) {
 
   const [to, setTo] = useState('')
   const [transferAmount, setTransferAmount] = useState('0.001')
+  const [mintTo, setMintTo] = useState('')
+  const [mintAmount, setMintAmount] = useState('0')
 
   // Validation helpers
   const isAddress = (v) => /^0x[a-fA-F0-9]{40}$/.test(v.trim())
@@ -61,6 +64,17 @@ export default function TransactionDemo({ tokenAddress }) {
     }
   }, [to, transferAmount, decimals, transferAddressValid, transferAmountValid])
 
+  const mintAddressValid = isAddress(mintTo)
+  const mintAmountValid = isPositiveNumber(mintAmount) && parseFloat(mintAmount) > 0
+  const mintArgs = useMemo(() => {
+    if (!mintAddressValid || !mintAmountValid) return undefined
+    try {
+      return [mintTo, parseUnits(mintAmount || '0', decimals)]
+    } catch {
+      return undefined
+    }
+  }, [mintTo, mintAmount, decimals, mintAddressValid, mintAmountValid])
+
   const { config: approveConfig, error: approvePrepError } = usePrepareContractWrite({
     address: tokenAddress,
     abi: erc20Abi,
@@ -80,6 +94,26 @@ export default function TransactionDemo({ tokenAddress }) {
   })
   const { write: writeTransfer, data: transferTx, error: transferError, isLoading: isTransferring } = useContractWrite(transferConfig)
   const { isLoading: transferMining, isSuccess: transferSuccess } = useWaitForTransaction({ hash: transferTx?.hash })
+
+  // Claim (no args) and Mint (owner-only) using rewardsAbi when available
+  const { config: claimConfig, error: claimPrepError } = usePrepareContractWrite({
+    address: tokenAddress,
+    abi: rewardsAbi,
+    functionName: 'claim',
+    enabled: isConnected && !!tokenAddress,
+  })
+  const { write: writeClaim, data: claimTx, error: claimError, isLoading: isClaiming } = useContractWrite(claimConfig)
+  const { isLoading: claimMining, isSuccess: claimSuccess } = useWaitForTransaction({ hash: claimTx?.hash })
+
+  const { config: mintConfig, error: mintPrepError } = usePrepareContractWrite({
+    address: tokenAddress,
+    abi: rewardsAbi,
+    functionName: 'mint',
+    args: mintArgs,
+    enabled: isConnected && !!tokenAddress && !!mintArgs,
+  })
+  const { write: writeMint, data: mintTx, error: mintError, isLoading: isMinting } = useContractWrite(mintConfig)
+  const { isLoading: mintMining, isSuccess: mintSuccess } = useWaitForTransaction({ hash: mintTx?.hash })
 
   if (!isConnected || !tokenAddress) return null
 
