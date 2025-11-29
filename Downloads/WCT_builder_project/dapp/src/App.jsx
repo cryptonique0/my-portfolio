@@ -13,6 +13,11 @@ import TransactionHistory from './components/TransactionHistory'
 import MultiWalletSupport from './components/MultiWalletSupport'
 import StakingDashboard from './components/StakingDashboard'
 import NFTMinting from './components/NFTMinting'
+import AnalyticsDashboard from './components/AnalyticsDashboard'
+import ThemeToggle from './components/ThemeToggle'
+import TransactionSimulator from './components/TransactionSimulator'
+import MultiSigIntegration from './components/MultiSigIntegration'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { formatAddress } from './lib/format'
 
 export default function App() {
@@ -46,39 +51,47 @@ export default function App() {
   const connectorsReady = connectors && connectors.length > 0
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 24 }}>
-      <h1>WCT DApp (WalletConnect on Celo Alfajores)</h1>
+    <ThemeProvider>
+      <div style={{ fontFamily: 'system-ui, sans-serif', padding: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1>WCT DApp (WalletConnect on Celo Alfajores)</h1>
+          <ThemeToggle />
+        </div>
 
-      <StatusBar />
-      <SwitchNetwork />
-      <div style={{ marginTop: 12 }}>
-        {isConnected ? (
-          <div>
-            <div>Connected address: {formatAddress(address)}</div>
-            <div style={{ marginTop: 8 }}>
-              <button onClick={() => disconnect()}>Disconnect</button>
-              <button onClick={onSign} style={{ marginLeft: 8 }}>
-                Sign message
-              </button>
+        <StatusBar />
+        <SwitchNetwork />
+        <div style={{ marginTop: 12 }}>
+          {isConnected ? (
+            <div>
+              <div>Connected address: {formatAddress(address)}</div>
+              <div style={{ marginTop: 8 }}>
+                <button onClick={() => disconnect()}>Disconnect</button>
+                <button onClick={onSign} style={{ marginLeft: 8 }}>
+                  Sign message
+                </button>
+              </div>
+              <NetworkInfo />
+              <TokenSelector tokens={TOKENS} value={selectedToken} onChange={setSelectedToken} />
+              <BalanceOf tokenAddress={TOKENS.cUSD.address} label="cUSD" />
+              {selectedToken && selectedToken !== TOKENS.cUSD.address && (
+                <BalanceOf tokenAddress={selectedToken} label="Selected token" />
+              )}
+              <TransactionDemo tokenAddress={selectedToken} />
+              <TransactionHistory />
+              <StakingDashboard tokenAddress={selectedToken} />
+              <NFTMinting nftContractAddress={selectedToken} /> {/* Placeholder; use actual NFT contract */}
+              <AnalyticsDashboard />
+              <TransactionSimulator txData={{ to: selectedToken, data: '0x', value: '0x0' }} /> {/* Placeholder txData */}
+              <MultiSigIntegration txData={{ to: selectedToken, data: '0x', value: '0x0' }} /> {/* Placeholder txData */}
+              {sig && (
+                <pre style={{ marginTop: 12, maxWidth: 800, whiteSpace: 'break-spaces' }}>{sig}</pre>
+              )}
             </div>
-            <NetworkInfo />
-            <TokenSelector tokens={TOKENS} value={selectedToken} onChange={setSelectedToken} />
-            <BalanceOf tokenAddress={TOKENS.cUSD.address} label="cUSD" />
-            {selectedToken && selectedToken !== TOKENS.cUSD.address && (
-              <BalanceOf tokenAddress={selectedToken} label="Selected token" />
-            )}
-            <TransactionDemo tokenAddress={selectedToken} />
-            <TransactionHistory />
-            <StakingDashboard tokenAddress={selectedToken} />
-            <NFTMinting nftContractAddress={selectedToken} /> {/* Placeholder; use actual NFT contract */}
-            {sig && (
-              <pre style={{ marginTop: 12, maxWidth: 800, whiteSpace: 'break-spaces' }}>{sig}</pre>
-            )}
-          </div>
-        ) : (
-          <MultiWalletSupport />
-        )}
+          ) : (
+            <MultiWalletSupport />
+          )}
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   )
 }
