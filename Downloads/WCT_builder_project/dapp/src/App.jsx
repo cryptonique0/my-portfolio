@@ -11,6 +11,8 @@ import TokenSelector from './components/TokenSelector'
 import TransactionDemo from './components/TransactionDemo'
 import TransactionHistory from './components/TransactionHistory'
 import MultiWalletSupport from './components/MultiWalletSupport'
+import StakingDashboard from './components/StakingDashboard'
+import NFTMinting from './components/NFTMinting'
 import { formatAddress } from './lib/format'
 
 export default function App() {
@@ -67,6 +69,8 @@ export default function App() {
             )}
             <TransactionDemo tokenAddress={selectedToken} />
             <TransactionHistory />
+            <StakingDashboard tokenAddress={selectedToken} />
+            <NFTMinting nftContractAddress={selectedToken} /> {/* Placeholder; use actual NFT contract */}
             {sig && (
               <pre style={{ marginTop: 12, maxWidth: 800, whiteSpace: 'break-spaces' }}>{sig}</pre>
             )}
