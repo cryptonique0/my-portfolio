@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useAccount, usePublicClient, usePrepareContractWrite, useContractWrite, useWaitForTransaction } from 'wagmi'
 import { erc20Abi } from '../abi/erc20'
-import { rewardsAbi } from '../abi/rewards'
+import { rewardsAbi } from '../../abi/rewards'
 import { parseUnits } from 'viem'
 import { useToast } from './Toast'
 import { addToHistory } from './TransactionHistory'
