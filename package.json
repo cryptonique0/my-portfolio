@@ -1,0 +1,45 @@
+{
+  "name": "on-chain-resume",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "deploy:base": "hardhat run scripts/deploy.js --network base",
+    "deploy:base-sepolia": "hardhat run scripts/deploy.js --network base-sepolia",
+    "deploy:local": "hardhat run scripts/deploy.js --network hardhat",
+    "compile": "hardhat compile"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "next": "^14.0.0",
+    "wagmi": "^2.5.0",
+    "@wagmi/connectors": "^4.0.0",
+    "viem": "^2.0.0",
+    "web3modal": "^3.4.0",
+    "@web3modal/wagmi": "^3.4.0",
+    "ipfs-http-client": "^60.0.0",
+    "axios": "^1.6.0",
+    "framer-motion": "^10.16.0",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.3.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0",
+    "hardhat": "^2.19.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+    "@nomiclabs/hardhat-ethers": "^10.2.0",
+    "ethers": "^6.10.0"
+  }
+}
