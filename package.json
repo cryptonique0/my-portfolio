@@ -7,26 +7,32 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "compile": "hardhat compile",
     "deploy:base": "hardhat run scripts/deploy.js --network base",
     "deploy:base-sepolia": "hardhat run scripts/deploy.js --network base-sepolia",
-    "deploy:local": "hardhat run scripts/deploy.js --network hardhat",
-    "compile": "hardhat compile"
+    "deploy:base-mainnet": "hardhat run scripts/deploy-base-mainnet-stacks-testnet.js --network base",
+    "deploy:stacks-testnet": "hardhat run scripts/deploy-base-mainnet-stacks-testnet.js --network stacks-testnet",
+    "deploy:base+stacks": "hardhat run scripts/deploy-base-mainnet-stacks-testnet.js",
+    "deploy:local": "hardhat run scripts/deploy.js --network hardhat"
   },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "next": "^14.0.0",
-    "wagmi": "^2.5.0",
-    "@wagmi/connectors": "^4.0.0",
-    "viem": "^2.0.0",
-    "web3modal": "^3.4.0",
-    "@web3modal/wagmi": "^3.4.0",
+    "wagmi": "^1.4.0",
+    "@wagmi/connectors": "^3.1.0",
+    "viem": "^1.21.0",
     "ipfs-http-client": "^60.0.0",
     "axios": "^1.6.0",
     "framer-motion": "^10.16.0",
     "tailwindcss": "^3.3.0",
     "typescript": "^5.3.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "@stacks/network": "^6.11.0",
+    "@stacks/transactions": "^6.11.0",
+    "@stacks/auth": "^6.11.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "ethers": "^6.10.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
@@ -37,9 +43,6 @@
     "eslint": "^8.0.0",
     "eslint-config-next": "^14.0.0",
     "hardhat": "^2.19.0",
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
-    "@nomiclabs/hardhat-ethers": "^10.2.0",
-    "ethers": "^6.10.0"
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0"
   }
 }
