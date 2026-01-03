@@ -1,8 +1,13 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("@nomiclabs/hardhat-ethers");
 require("dotenv").config();
 
 module.exports = {
+  paths: {
+    sources: "./contracts",
+    tests: "./test",
+    cache: "./cache",
+    artifacts: "./artifacts"
+  },
   solidity: {
     version: "0.8.19",
     settings: {
