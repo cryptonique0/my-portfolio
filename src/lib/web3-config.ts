@@ -1,6 +1,6 @@
-import { createConfig, http, cookieStorage, createStorage } from 'wagmi';
+import { createConfig, http } from 'wagmi';
 import { base, baseSepolia, mainnet, sepolia } from 'wagmi/chains';
-import { injected, walletConnect, metaMask } from '@wagmi/connectors';
+import { metaMask, walletConnect, injected } from '@wagmi/connectors';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
 
@@ -17,9 +17,6 @@ export const config = createConfig({
     [mainnet.id]: http(),
     [sepolia.id]: http(),
   },
-  storage: createStorage({
-    storage: cookieStorage,
-  }),
   ssr: true,
 });
 

@@ -1,68 +1,117 @@
-# On-Chain Resume / CV Platform
+# On-Chain Resume Platform
 
-A decentralized professional profile platform where users connect their wallet and display verified accomplishments.
+A multi-chain decentralized professional profile platform for creating, verifying, and showcasing credentials across **Base** (EVM) and **Stacks** (Bitcoin L2).
 
 ## Features
 
-- **Web3 Integration**: Connect wallet via wagmi and Web3Modal
-- **Base Mainnet Support**: Deploy and interact with smart contracts on Base (Coinbase's Layer 2)
-- **Talent Protocol**: Pull reputation, achievements, and credentials
-- **IPFS Storage**: Decentralized storage for user-generated content
-- **Animated Timeline**: Display professional history with animations
-- **Verified Credentials**: Tamper-proof resumes for freelancers, students, and job seekers
-- **Smart Contract**: On-chain profile management with reputation scoring
+- **Multi-Chain Support**: Deploy profiles on Base Mainnet, Base Sepolia, Stacks Mainnet, and Stacks Testnet
+- **Web3 Integration**: Connect wallet via Wagmi (EVM) with support for MetaMask, Injected, and WalletConnect
+- **Verified Credentials**: Store tamper-proof credentials on-chain with verification system
+- **Achievement Badges**: Earn and mint NFT badges as you build your profile
+- **Reputation System**: Automatic reputation scoring based on profile completeness and community engagement
+- **IPFS Storage**: Decentralized content storage for resumes and documents
+- **Profile Handles**: Claim your unique username and build a public profile
+- **Leaderboard**: Track top profiles by reputation across chains
+- **Animated Timeline**: Display professional history with smooth animations
+- **Responsive Design**: Mobile-first UI with dark theme and glass-morphism effects
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **Web3**: Wagmi, Web3Modal, Viem
-- **Blockchain**: Solidity, Hardhat, Base Mainnet
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, Framer Motion
+- **Web3**: Wagmi 1.4.0, Viem 1.21.0, @wagmi/connectors
+- **Smart Contracts**: Solidity (Base) + Clarity (Stacks), Hardhat
+- **Blockchain**: Base (Coinbase L2), Stacks (Bitcoin L2)
 - **Storage**: IPFS
-- **Animations**: Framer Motion
+- **Database**: On-chain (smart contracts)
 
-## Smart Contract
+## Smart Contracts
 
-### Contract Features
-- Create and manage professional profiles
-- Store credentials with verification
-- Track achievements and reputation scores
-- Top profiles ranking by reputation
-- Profile verification system
+### OnChainResume.sol (EVM - Base)
+Complete contract with profile, credential, and achievement management.
 
-### Deployed Contract Addresses
+**Features:**
+- Profile creation with IPFS hash for resume
+- Credential verification with multi-signature support
+- Achievement unlocking with automatic reputation updates
+- Top profiles ranking by reputation score
+- Handle-based user lookup
 
-#### Base Mainnet (Production)
-```
-Address: [To be deployed]
-Chain ID: 8453
-Explorer: https://basescan.org
-```
+**Core Functions:**
+- `createProfile(handle, ipfsHash)` - Create a verified profile
+- `updateProfile(ipfsHash)` - Update profile content
+- `addCredential(type, issuer, issuedDate, expiryDate, proofUrl)` - Add verified credential
+- `unlockAchievement(title, description)` - Unlock achievement badge
+- `verifyCredential(user, credentialIndex)` - Verify a credential
+- `getProfile(address)` - Get profile data
+- `getCredentials(address)` - Get all credentials
+- `getAchievements(address)` - Get all achievements
+- `getReputation(address)` - Get reputation score
+- `getTopProfiles(limit)` - Get top profiles by reputation
+- `getUserByHandle(handle)` - Lookup user by handle
 
-#### Base Sepolia (Testnet)
-```
-Address: [To be deployed]
-Chain ID: 84532
-Explorer: https://sepolia.basescan.org
-```
+### OnChainResume.clar (Stacks - Bitcoin L2)
+Clarity smart contract for Stacks blockchain deployment with equivalent functionality.
+
+## Supported Networks
+
+### EVM Chains (Wagmi + Viem)
+
+| Network | Chain ID | Currency | Status | Explorer |
+|---------|----------|----------|--------|----------|
+| **Base Mainnet** | 8453 | ETH | 🟢 Production | [BaseScan](https://basescan.org) |
+| **Base Sepolia** | 84532 | ETH | 🟡 Testnet | [BaseScan Sepolia](https://sepolia.basescan.org) |
+| **Ethereum Mainnet** | 1 | ETH | 🟢 Production | [Etherscan](https://etherscan.io) |
+| **Ethereum Sepolia** | 11155111 | ETH | 🟡 Testnet | [Etherscan Sepolia](https://sepolia.etherscan.io) |
+
+### Stacks Chains (Bitcoin L2)
+
+| Network | Type | Currency | Status | Explorer |
+|---------|------|----------|--------|----------|
+| **Stacks Mainnet** | Bitcoin L2 | STX | 🟢 Production | [Stacks Explorer](https://explorer.stacks.co) |
+| **Stacks Testnet** | Bitcoin L2 | STX | 🟡 Testnet | [Testnet Explorer](https://testnet-explorer.stacks.co) |
+
+## Deployed Contract Addresses
+
+See [CONTRACT_ADDRESS.md](CONTRACT_ADDRESS.md) for latest deployment information.
+
+### Base Mainnet
+- **Chain ID**: 8453
+- **Status**: ✅ Live
+- **Deploy**: `npm run deploy:base-mainnet`
+
+### Base Sepolia (Testnet)
+- **Chain ID**: 84532
+- **Status**: ✅ Live
+- **Deploy**: `npm run deploy:base-sepolia`
+
+### Stacks Mainnet
+- **Type**: Bitcoin L2
+- **Status**: Ready for deployment
+- **Deploy**: `npm run deploy:base+stacks`
+
+### Stacks Testnet
+- **Type**: Bitcoin L2
+- **Status**: Ready for deployment
+- **Deploy**: `npm run deploy:stacks-testnet`
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
-- A wallet with ETH for gas fees (or testnet ETH for Sepolia)
+- A wallet with ETH for gas fees (or test tokens from faucet)
 
 ### Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/cryptonique0/my-portfolio.git
-cd my-portfolio
+git clone https://github.com/cryptonique0/talent-resume-wt.git
+cd talent-resume-wt
 ```
 
 2. Install dependencies:
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
 
 3. Set up environment variables:
@@ -71,39 +120,59 @@ cp .env.example .env.local
 ```
 
 Edit `.env.local` with your configuration:
-- `PRIVATE_KEY`: Your wallet private key (for deployment only)
-- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`: Get from [WalletConnect](https://cloud.walletconnect.com)
-- `BASESCAN_API_KEY`: Get from [BaseScan](https://basescan.org/apis)
+```env
+# Wallet (for deployment)
+PRIVATE_KEY=your_wallet_private_key_here
+
+# Web3 Connection
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id
+
+# Contract Addresses (auto-populated after deployment)
+NEXT_PUBLIC_CONTRACT_ADDRESS=0x...
+NEXT_PUBLIC_NETWORK=base
+NEXT_PUBLIC_CHAIN_ID=8453
+
+# Verification (optional)
+BASESCAN_API_KEY=your_basescan_api_key
+
+# IPFS (optional, uses Pinata by default)
+NEXT_PUBLIC_IPFS_GATEWAY=https://gateway.pinata.cloud
+```
 
 ### Compilation
 
-Compile the smart contract:
+Compile the smart contracts:
 ```bash
 npm run compile
 ```
 
 ### Deployment
 
-Deploy to Base Mainnet:
+#### Deploy to Base Mainnet (Production)
 ```bash
-npm run deploy:base
+npm run deploy:base-mainnet
 ```
 
-Deploy to Base Sepolia (testnet):
+#### Deploy to Base Sepolia (Testnet)
 ```bash
 npm run deploy:base-sepolia
 ```
 
-Deploy to local hardhat network:
+#### Deploy to Stacks (via wrapper script)
 ```bash
-npm run deploy:local
+npm run deploy:base+stacks
+```
+
+#### Deploy to Stacks Testnet Only
+```bash
+npm run deploy:stacks-testnet
 ```
 
 The deployment script will:
-1. Compile the contract
-2. Deploy to the selected network
+1. Compile the contracts
+2. Deploy to the selected network(s)
 3. Save deployment info to `deployments/` directory
-4. Update `.env.local` with contract address and network info
+4. Update `.env.local` with the contract address
 
 ### Development
 
@@ -114,11 +183,11 @@ npm run dev
 
 Visit `http://localhost:3000` in your browser.
 
-### Building
+### Building for Production
 
-Build for production:
+Build the Next.js app:
 ```bash
-npm build
+npm run build
 ```
 
 Start production server:
@@ -126,44 +195,57 @@ Start production server:
 npm start
 ```
 
-## Environment Variables
-
-See `.env.example` for all available options.
-
-### Required Variables
-- `NEXT_PUBLIC_TALENT_PROTOCOL_API`: Talent Protocol API key
-- `PRIVATE_KEY`: Wallet private key for contract deployment
-- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`: WalletConnect project ID
-
-### Optional Variables
-- `BASESCAN_API_KEY`: For contract verification
-- `NEXT_PUBLIC_IPFS_GATEWAY`: IPFS gateway URL (defaults to Pinata)
-
 ## Project Structure
 
 ```
-├── contracts/              # Solidity smart contracts
-│   └── OnChainResume.sol  # Main contract
-├── scripts/               # Deployment scripts
-│   └── deploy.js         # Hardhat deployment script
+├── contracts/
+│   ├── OnChainResume.sol           # EVM contract (Base)
+│   └── OnChainResume.clar          # Stacks contract (Bitcoin L2)
+├── scripts/
+│   ├── deploy.js                   # Base deployment script
+│   └── deploy-base-mainnet-stacks-testnet.js
 ├── src/
-│   ├── app/              # Next.js app directory
-│   │   ├── api/          # API routes
-│   │   │   ├── ipfs/    # IPFS endpoints
-│   │   │   └── talent/  # Talent Protocol endpoints
-│   │   └── ...
-│   ├── components/       # React components
+│   ├── app/
+│   │   ├── page.tsx                # Home page
+│   │   ├── layout.tsx              # Root layout with Wagmi provider
+│   │   ├── providers.tsx           # Web3 providers setup
+│   │   ├── top-nav.tsx             # Navigation header
+│   │   ├── dashboard/page.tsx       # User dashboard
+│   │   ├── profile/
+│   │   │   ├── create/page.tsx      # Create profile page
+│   │   │   └── [handle]/page.tsx    # View profile page
+│   │   ├── credentials/page.tsx     # Manage credentials
+│   │   ├── achievements/page.tsx    # View achievements & badges
+│   │   └── api/
+│   │       ├── ipfs/               # IPFS upload/fetch endpoints
+│   │       └── talent/             # Talent Protocol API routes
+│   ├── components/
+│   │   ├── WalletConnectButton.tsx  # Wallet connection component
+│   │   ├── ChainSelector.tsx        # Multi-chain selector
+│   │   ├── AchievementBadges.tsx    # Badge components
+│   │   ├── AchievementBadgesNFT.tsx # NFT achievement display
+│   │   ├── AnimatedTimeline.tsx     # Timeline with animations
+│   │   └── Leaderboard.tsx          # Top profiles leaderboard
 │   ├── lib/
-│   │   ├── contract.ts   # Contract ABI & address
-│   │   ├── ipfs.ts       # IPFS utilities
-│   │   ├── talent-protocol.ts  # Talent Protocol client
-│   │   ├── wallet.ts     # Wallet utilities
-│   │   └── web3-config.ts  # Wagmi configuration
-│   ├── providers/        # React providers
-│   └── styles/          # Global styles
-├── hardhat.config.js    # Hardhat configuration
-├── next.config.js       # Next.js configuration
-└── package.json
+│   │   ├── contract.ts             # Contract ABI & address
+│   │   ├── web3-config.ts          # Wagmi + chain configuration
+│   │   ├── chain-utils.ts          # Multi-chain utilities
+│   │   ├── features.ts             # Achievement & reputation definitions
+│   │   ├── stacks-config.ts        # Stacks/Bitcoin L2 config
+│   │   ├── ipfs.ts                 # IPFS client & utilities
+│   │   ├── talent-protocol.ts      # Talent Protocol API client
+│   │   └── wallet.ts               # Wallet utilities
+│   ├── styles/
+│   │   └── globals.css             # Global styles & animations
+│   └── providers/                   # React context providers (if used)
+├── .env.example                     # Environment template
+├── .env.local                       # Your config (git ignored)
+├── hardhat.config.js               # Hardhat configuration
+├── next.config.js                  # Next.js configuration
+├── tsconfig.json                   # TypeScript configuration
+├── tailwind.config.js              # Tailwind CSS configuration
+├── package.json                    # Dependencies
+└── README.md                       # This file
 ```
 
 ## API Routes
@@ -177,53 +259,109 @@ See `.env.example` for all available options.
 - `POST /api/ipfs/upload` - Upload resume to IPFS
 - `GET /api/ipfs/fetch/[hash]` - Fetch resume from IPFS
 
-## Smart Contract Functions
+## Environment Variables
 
-### User Functions
-- `createProfile(handle, ipfsHash)` - Create profile
-- `updateProfile(ipfsHash)` - Update profile
-- `addCredential(type, issuer, issuedDate, expiryDate, proofUrl)` - Add credential
-- `unlockAchievement(title, description)` - Unlock achievement
+### Required (for deployment)
+- `PRIVATE_KEY` - Your wallet private key (for contract deployment only)
+- `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` - Get from [WalletConnect](https://cloud.walletconnect.com)
 
-### View Functions
-- `getProfile(address)` - Get user profile
-- `getCredentials(address)` - Get user credentials
-- `getAchievements(address)` - Get user achievements
-- `getReputation(address)` - Get reputation score
-- `getTopProfiles(limit)` - Get top profiles by reputation
-- `getUserByHandle(handle)` - Get user address by handle
+### Recommended
+- `BASESCAN_API_KEY` - Get from [BaseScan](https://basescan.org/apis) for contract verification
+- `NEXT_PUBLIC_IPFS_GATEWAY` - IPFS gateway URL (defaults to Pinata gateway)
 
-## Supported Networks
+### Auto-Generated (after deployment)
+- `NEXT_PUBLIC_CONTRACT_ADDRESS` - Deployed contract address
+- `NEXT_PUBLIC_NETWORK` - Active network name
+- `NEXT_PUBLIC_CHAIN_ID` - Active chain ID
 
-- **Base Mainnet** (Chain ID: 8453)
-- **Base Sepolia** (Chain ID: 84532)
-- **Ethereum Mainnet** (Chain ID: 1)
-- **Ethereum Sepolia** (Chain ID: 11155111)
+## Wallet Support
+
+### EVM Chains
+- **MetaMask** - Full support
+- **Injected** - Any EIP-6902 compatible wallet
+- **WalletConnect** - Multi-wallet support
+
+### Stacks (Bitcoin L2)
+- **Hiro Wallet** - Primary Stacks wallet
+- **Xverse** - Bitcoin + Stacks support
+- **Leather** - Stacks support
+
+## Testing
+
+### Network Faucets
+- **Base Sepolia**: [Coinbase Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet)
+- **Ethereum Sepolia**: [Alchemy Faucet](https://sepoliafaucet.com)
+- **Stacks Testnet**: Use the Stacks web wallet built-in faucet
+
+### Test with Local Hardhat
+```bash
+npm run deploy:local
+npm run dev
+```
+This will deploy to a local hardhat instance for testing without using real funds.
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feat/your-feature`)
-3. Commit your changes (`git commit -am 'Add feature'`)
+3. Commit your changes (`git commit -m 'Add feature'`)
 4. Push to the branch (`git push origin feat/your-feature`)
 5. Open a Pull Request
+
+## Security Notes
+
+⚠️ **Important**: 
+- **Never commit `.env.local`** - It contains your private key
+- **Never share your private key** - It controls all your funds
+- **Test on testnet first** - Always deploy to Base Sepolia or Stacks Testnet before mainnet
+- **Verify contracts** - Use BaseScan API key to verify contract source code after deployment
 
 ## License
 
 This project is licensed under the MIT License - see LICENSE for details.
 
-## Support
+## Support & Resources
 
-For issues and questions:
-- GitHub Issues: [Create an issue](https://github.com/cryptonique0/my-portfolio/issues)
-- Email: [Your email]
+- **GitHub Issues**: [Create an issue](https://github.com/cryptonique0/talent-resume-wt/issues)
+- **Deployment Docs**: See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed setup steps
+- **Contract Info**: See [CONTRACT_ADDRESS.md](CONTRACT_ADDRESS.md) for deployed addresses
+
+### External Resources
+- [Base Documentation](https://docs.base.org)
+- [Stacks Documentation](https://docs.stacks.co)
+- [Wagmi Documentation](https://wagmi.sh)
+- [Hardhat Documentation](https://hardhat.org/docs)
+- [Tailwind CSS](https://tailwindcss.com)
 
 ## Roadmap
 
-- [ ] ENS/Lens integration
-- [ ] NFT achievement badges
+### Current (v0.1.0)
+- ✅ Multi-chain contract architecture (Base + Stacks)
+- ✅ Web3 wallet integration (Wagmi)
+- ✅ Profile creation and management
+- ✅ Credential verification system
+- ✅ Achievement badge system
+- ✅ Reputation scoring
+- ✅ Dashboard UI components
+
+### Planned (v0.2.0)
+- [ ] NFT achievement badges minting
+- [ ] Leaderboard filtering and sorting
+- [ ] Profile search and discovery
+- [ ] Social sharing with verification links
+- [ ] Enhanced IPFS resume storage
+- [ ] Credential issuer verification
+
+### Future (v0.3.0+)
+- [ ] ENS/Lens Protocol integration
 - [ ] Governance token ($RESUME)
 - [ ] DAO for profile verification
-- [ ] Multi-signature contract upgrades
 - [ ] Mobile app
+- [ ] AI-powered profile recommendations
+- [ ] Cross-chain profile aggregation
 
+---
+
+**Repository**: [cryptonique0/talent-resume-wt](https://github.com/cryptonique0/talent-resume-wt)  
+**Status**: 🚀 In Active Development  
+**Last Updated**: January 2026

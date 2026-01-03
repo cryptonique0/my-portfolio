@@ -90,6 +90,41 @@ export function getIPFSGatewayUrl(ipfsHash: string): string {
 }
 
 /**
+ * Upload JSON data to IPFS via Pinata
+ */
+export async function uploadJSONToIPFS(data: any): Promise<{ hash: string; url: string }> {
+  try {
+    const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'pinata_api_key': process.env.PINATA_API_KEY || '',
+        'pinata_secret_api_key': process.env.PINATA_SECRET_KEY || '',
+      },
+      body: JSON.stringify({
+        pinataContent: data,
+        pinataMetadata: {
+          name: `resume-${Date.now()}.json`,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload to IPFS');
+    }
+
+    const result = await response.json();
+    return {
+      hash: result.IpfsHash,
+      url: `${IPFS_GATEWAY}/ipfs/${result.IpfsHash}`,
+    };
+  } catch (error) {
+    console.error('Error uploading to IPFS:', error);
+    throw error;
+  }
+}
+
+/**
  * Pin resume to IPFS (persistent storage)
  */
 export async function pinResumeToIPFS(resumeData: ResumeData): Promise<string> {
