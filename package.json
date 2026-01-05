@@ -16,6 +16,7 @@
     "deploy:local": "hardhat run scripts/deploy.js --network hardhat"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@openzeppelin/contracts": "^5.0.0",
     "@stacks/auth": "^6.11.0",
     "@stacks/network": "^6.11.0",

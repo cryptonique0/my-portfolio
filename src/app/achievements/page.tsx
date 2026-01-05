@@ -9,7 +9,9 @@ import { AchievementType } from "@/lib/features";
 export default function AchievementsPage() {
   const { isConnected, address } = useAccount();
   const [unlockedAchievements, setUnlockedAchievements] = useState<AchievementType[]>([]);
-  const [nftTokenIds, setNftTokenIds] = useState<Record<AchievementType, number>>({});
+  const [nftTokenIds, setNftTokenIds] = useState<Record<AchievementType, number>>(
+    {} as Record<AchievementType, number>
+  );
 
   if (!isConnected) {
     return (

@@ -1,4 +1,4 @@
-import { useAccount, useChainId, useSwitchChain } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import { useCallback, useEffect, useState } from 'react';
 import { ChainType, NETWORKS, EVM_NETWORKS, STACKS_NETWORKS } from './web3-config';
 import { StacksWalletType } from './stacks-config';

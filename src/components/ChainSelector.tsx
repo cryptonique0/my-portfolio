@@ -6,7 +6,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { useSwitchChain } from 'wagmi';
+import { useChainId } from 'wagmi';
 import { useChainDetection, getNetworksByType, getAllNetworks } from '@/lib/chain-utils';
 import { ChainType, NETWORKS } from '@/lib/web3-config';
 import { useStacksChain } from '@/lib/chain-utils';
@@ -19,7 +19,6 @@ interface ChainSelectorProps {
 export function ChainSelector({ onChainChange, className = '' }: ChainSelectorProps) {
   const { currentChain, isEvmChain, isStacksChain, switchToChain } = useChainDetection();
   const { switchStacksNetwork } = useStacksChain();
-  const { switchChain } = useSwitchChain();
   const [showDropdown, setShowDropdown] = useState(false);
 
   const allNetworks = getAllNetworks();
@@ -28,8 +27,8 @@ export function ChainSelector({ onChainChange, className = '' }: ChainSelectorPr
     async (chainId: number | string, chainName: string) => {
       try {
         if (typeof chainId === 'number') {
-          // EVM chain
-          await switchChain?.({ chainId });
+          // EVM chain - use switchToChain from hook
+          await switchToChain(chainId);
         } else {
           // Stacks chain
           const isTestnet = chainId === '2147483648';
@@ -41,7 +40,7 @@ export function ChainSelector({ onChainChange, className = '' }: ChainSelectorPr
         console.error('Failed to switch chain:', error);
       }
     },
-    [switchChain, switchStacksNetwork, onChainChange]
+    [switchToChain, switchStacksNetwork, onChainChange]
   );
 
   const currentChainName = currentChain?.name || 'Select Chain';

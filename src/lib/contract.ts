@@ -438,3 +438,14 @@ export const ON_CHAIN_RESUME_ABI = [
 ];
 
 export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
+
+/**
+ * Helper to get contract instance
+ * Returns the ABI for contract interactions
+ */
+export function getContract(address: string) {
+  return {
+    address,
+    abi: ON_CHAIN_RESUME_ABI,
+  };
+}
