@@ -13,6 +13,7 @@ export interface Badge {
   currentSupply: number;
   maxSupply: number;
   isActive: boolean;
+  isSoulbound?: boolean; // ⭐ NEW: Non-transferable flag
   createdAt: number;
   owned?: boolean;
   quantity?: number;
@@ -210,9 +211,17 @@ function BadgeCard({
 
       {/* Badge Info */}
       <div className="p-4 space-y-2">
-        <h3 className="font-bold text-gray-900 dark:text-white text-sm truncate">
-          {badge.name}
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-gray-900 dark:text-white text-sm truncate flex-1">
+            {badge.name}
+          </h3>
+          {/* Soulbound Indicator ⭐ NEW */}
+          {badge.isSoulbound && (
+            <span className="ml-2 px-2 py-0.5 bg-purple-500 text-white text-xs font-semibold rounded-full flex items-center gap-1">
+              🔗 Soulbound
+            </span>
+          )}
+        </div>
 
         {/* Status Badge */}
         <motion.div
@@ -284,12 +293,29 @@ function BadgeDetailModal({
 
         {/* Badge Title */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {badge.name}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {badge.name}
+            </h2>
+            {/* Soulbound Badge ⭐ NEW */}
+            {badge.isSoulbound && (
+              <span className="px-3 py-1 bg-purple-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                🔗 SOULBOUND
+              </span>
+            )}
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
             {badge.description}
           </p>
+          {/* Soulbound Explanation ⭐ NEW */}
+          {badge.isSoulbound && (
+            <div className="mt-3 p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg border border-purple-300 dark:border-purple-700">
+              <p className="text-xs text-purple-900 dark:text-purple-200">
+                <strong>🔒 Non-Transferable:</strong> This badge is permanently bound to your wallet 
+                and cannot be transferred or sold. It serves as a verified credential of your achievements.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Details Grid */}
