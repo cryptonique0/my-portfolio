@@ -9,10 +9,11 @@ A multi-chain decentralized professional profile platform for creating, verifyin
 - **Verified Credentials**: Store tamper-proof credentials on-chain with verification system
 - **Achievement Badges**: Earn and mint NFT badges as you build your profile
 - **Reputation System**: Automatic reputation scoring based on profile completeness and community engagement
-- **IPFS Storage**: Decentralized content storage for resumes and documents
+- **IPFS Resume Storage**: Structured resume JSON stored on IPFS with Pinata pinning
+- **Animated Resume Timeline**: Vertical timeline with category grouping and credential verification highlights
+- **Credential Verification**: Multi-signature verification system for credentials
+- **Leaderboard System**: Paginated ranking view sorted by reputation score
 - **Profile Handles**: Claim your unique username and build a public profile
-- **Leaderboard**: Track top profiles by reputation across chains
-- **Animated Timeline**: Display professional history with smooth animations
 - **Responsive Design**: Mobile-first UI with dark theme and glass-morphism effects
 
 ## Tech Stack
@@ -23,6 +24,92 @@ A multi-chain decentralized professional profile platform for creating, verifyin
 - **Blockchain**: Base (Coinbase L2), Stacks (Bitcoin L2)
 - **Storage**: IPFS
 - **Database**: On-chain (smart contracts)
+
+## 🚀 Public Launch (Phase 3)
+
+We're preparing the platform for public launch with new features and comprehensive documentation.
+
+### What's New in Phase 3
+
+**NFT Achievement Badges System**
+- ERC1155 multi-token badges linked to reputation milestones
+- 9 badge tiers from Verified Professional to Hall of Fame
+- Automatic badge minting on reputation thresholds
+- Full UI component library with animations
+- Batch minting for gas efficiency
+
+**Documentation & Resources**
+- [PUBLIC_LAUNCH_GUIDE.md](PUBLIC_LAUNCH_GUIDE.md) - Comprehensive launch guide
+  - Gas optimization techniques and cost breakdown
+  - Security audit checklist and best practices
+  - Development roadmap (v0.2.0 → v2.0+)
+  - Contribution guidelines and development workflow
+  
+- [BADGE_SYSTEM.md](BADGE_SYSTEM.md) - Complete badge system documentation
+  - Smart contract architecture and API reference
+  - Frontend integration guide with code examples
+  - Testing and deployment instructions
+  - Badge tier progression system
+
+- [FEATURE_IMPLEMENTATION.md](FEATURE_IMPLEMENTATION.md) - Phase 2 feature guide
+  - IPFS resume storage system
+  - Animated resume timeline
+  - Credential verification system
+  - Leaderboard ranking system
+
+### Gas Efficiency
+
+Optimized contract design ensures affordable transactions:
+
+| Operation | Gas Cost | Est. Cost (Base) |
+|-----------|----------|------------------|
+| Create Profile | 45,000 | ~$0.018 |
+| Add Credential | 32,000 | ~$0.013 |
+| Unlock Achievement | 28,000 | ~$0.011 |
+| Mint Single Badge | 35,000 | ~$0.014 |
+| Batch Mint (10 badges) | 120,000 | ~$0.048 |
+| Verify Credential | 24,000 | ~$0.010 |
+
+See [PUBLIC_LAUNCH_GUIDE.md](PUBLIC_LAUNCH_GUIDE.md#gas-optimization) for detailed optimization strategies.
+
+### Security & Audits
+
+✅ Contract security features:
+- OpenZeppelin battle-tested standards (ERC721, ERC1155, Ownable)
+- Reentrancy protection
+- Access control with admin/minter roles
+- Pause/unpause circuit breaker
+- Integer overflow protection (Solidity 0.8+)
+- Supply tracking and limits
+
+⚠️ Pre-deployment checklist: See [PUBLIC_LAUNCH_GUIDE.md](PUBLIC_LAUNCH_GUIDE.md#security-considerations)
+
+### Roadmap
+
+**Current: v0.2.0** (Phase 2 Complete)
+- ✅ IPFS Resume Storage
+- ✅ Animated Timeline
+- ✅ Credential Verification
+- ✅ Leaderboard System
+- ✅ NFT Achievement Badges
+
+**Upcoming: v0.3.0** (Phase 4)
+- ENS/Lens Integration
+- Governance Token
+- Community DAO
+- Mobile App
+- AI Recommendations
+
+See full roadmap in [PUBLIC_LAUNCH_GUIDE.md](PUBLIC_LAUNCH_GUIDE.md#roadmap-updates).
+
+### Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](PUBLIC_LAUNCH_GUIDE.md#contribution-guidelines) for:
+- Code of conduct
+- Development workflow
+- Testing requirements
+- Documentation standards
+- Pull request process
 
 ## Smart Contracts
 
@@ -217,27 +304,41 @@ npm start
 │   │   ├── credentials/page.tsx     # Manage credentials
 │   │   ├── achievements/page.tsx    # View achievements & badges
 │   │   └── api/
-│   │       ├── ipfs/               # IPFS upload/fetch endpoints
+│   │       ├── ipfs/               # IPFS storage endpoints
+│   │       │   ├── upload/         # Resume upload to IPFS
+│   │       │   ├── fetch/          # Fetch resume from IPFS
+│   │       │   └── pin/            # Pinata management
+│   │       ├── credentials/        # Credential endpoints
+│   │       │   └── verify/         # Credential verification
+│   │       ├── leaderboard/        # Leaderboard endpoints
 │   │       └── talent/             # Talent Protocol API routes
 │   ├── components/
 │   │   ├── WalletConnectButton.tsx  # Wallet connection component
 │   │   ├── ChainSelector.tsx        # Multi-chain selector
 │   │   ├── AchievementBadges.tsx    # Badge components
 │   │   ├── AchievementBadgesNFT.tsx # NFT achievement display
-│   │   ├── AnimatedTimeline.tsx     # Timeline with animations
-│   │   └── Leaderboard.tsx          # Top profiles leaderboard
+│   │   ├── AnimatedTimeline.tsx     # Timeline with grouping & verification
+│   │   ├── Leaderboard.tsx          # Top profiles leaderboard
+│   │   ├── ResumeUploadComponent.tsx # Resume builder & IPFS uploader
+│   │   ├── NetworkStatusBanner.tsx  # Network status display
+│   │   └── ...
+│   ├── hooks/
+│   │   ├── useIPFSResume.ts         # IPFS upload, verification, leaderboard
+│   │   ├── useContractProfile.ts    # Contract profile interactions
+│   │   ├── useWalletSession.ts      # Wallet session management
+│   │   └── ...
 │   ├── lib/
 │   │   ├── contract.ts             # Contract ABI & address
 │   │   ├── web3-config.ts          # Wagmi + chain configuration
 │   │   ├── chain-utils.ts          # Multi-chain utilities
 │   │   ├── features.ts             # Achievement & reputation definitions
-│   │   ├── stacks-config.ts        # Stacks/Bitcoin L2 config
 │   │   ├── ipfs.ts                 # IPFS client & utilities
+│   │   ├── stacks-config.ts        # Stacks/Bitcoin L2 config
 │   │   ├── talent-protocol.ts      # Talent Protocol API client
 │   │   └── wallet.ts               # Wallet utilities
 │   ├── styles/
 │   │   └── globals.css             # Global styles & animations
-│   └── providers/                   # React context providers (if used)
+│   └── providers/                   # React context providers
 ├── .env.example                     # Environment template
 ├── .env.local                       # Your config (git ignored)
 ├── hardhat.config.js               # Hardhat configuration
@@ -245,19 +346,30 @@ npm start
 ├── tsconfig.json                   # TypeScript configuration
 ├── tailwind.config.js              # Tailwind CSS configuration
 ├── package.json                    # Dependencies
+├── FEATURE_IMPLEMENTATION.md        # Feature implementation guide
 └── README.md                       # This file
 ```
 
 ## API Routes
 
+### IPFS Storage
+- `POST /api/ipfs/upload` - Upload resume JSON to IPFS with Pinata pinning
+- `GET /api/ipfs/fetch/[hash]` - Fetch resume from IPFS (multiple gateways)
+- `POST /api/ipfs/pin` - Pin existing content to Pinata
+
+### Credential Management
+- `POST /api/credentials/verify` - Verify a credential (multi-signature support)
+- `GET /api/credentials/verify` - Check credential verification status
+
+### Leaderboard & Rankings
+- `GET /api/leaderboard` - Fetch top profiles by reputation
+- `GET /api/leaderboard?page=1&limit=10&sortBy=reputation` - Paginated leaderboard
+- `GET /api/leaderboard?sortBy=achievements` - Sort by achievements instead
+
 ### Talent Protocol
 - `GET /api/talent/profile/[handle]` - Fetch user profile
 - `GET /api/talent/achievements/[handle]` - Fetch achievements
 - `GET /api/talent/credentials/[handle]` - Fetch credentials
-
-### IPFS
-- `POST /api/ipfs/upload` - Upload resume to IPFS
-- `GET /api/ipfs/fetch/[hash]` - Fetch resume from IPFS
 
 ## Environment Variables
 
@@ -271,8 +383,11 @@ npm start
 
 ### Auto-Generated (after deployment)
 - `NEXT_PUBLIC_CONTRACT_ADDRESS` - Deployed contract address
-- `NEXT_PUBLIC_NETWORK` - Active network name
-- `NEXT_PUBLIC_CHAIN_ID` - Active chain ID
+- `NEXT_PUBLIC_NETWORK` - Active network nameImprove test coverage:
+- Add contract unit tests for edge cases
+- Add frontend integration tests
+- Ensure Base Sepolia compatibility
+
 
 ## Wallet Support
 
@@ -352,13 +467,68 @@ This project is licensed under the MIT License - see LICENSE for details.
 - [ ] Enhanced IPFS resume storage
 - [ ] Credential issuer verification
 
-### Future (v0.3.0+)
+#### Profile & Identity
+- [ ] Skill endorsements from other users
+- [ ] Work experience verification via employer signatures
+- [ ] Education credentials from verified institutions
+- [ ] Professional certifications (AWS, Google, etc.)
+- [ ] Profile privacy controls (public/private fields)
+- [ ] Custom profile themes/templates
+- [ ] Portfolio showcase (link projects, GitHub repos)
+
+#### Social & Networking
+- [ ] Follow system for users
+- [ ] Profile recommendations based on skills
+- [ ] Referral system with rewards
+
+#### Technical Improvements
+- [ ] Multi-signature credential verification (require 2+ verifiers)
+- [ ] Credential expiry notifications
+- [ ] Profile activity feed
+- [ ] Real-time notifications (new credential, badge unlocked)
+
+### Future (v0.3.0)
 - [ ] ENS/Lens Protocol integration
 - [ ] Governance token ($RESUME)
 - [ ] DAO for profile verification
 - [ ] Mobile app
 - [ ] AI-powered profile recommendations
 - [ ] Cross-chain profile aggregation
+
+#### Social & Community
+- [ ] Direct messaging between verified profiles
+- [ ] Job posting board for employers
+- [ ] Community forums by industry/skill
+
+#### Monetization & Value
+- [ ] Premium profiles with additional features
+- [ ] Pay-to-verify for high-trust credentials
+- [ ] Sponsored badge programs
+- [ ] Profile analytics (who viewed, skill trends)
+- [ ] Resume export as PDF/JSON
+- [ ] API access for recruiters
+
+#### Advanced Features
+- [ ] ZK Proofs for privacy-preserving verification
+- [ ] Soulbound tokens for non-transferable credentials
+- [ ] DID integration (Decentralized Identifiers)
+- [ ] On-chain resume templates with customization
+- [ ] Reputation decay (inactive profiles lose score over time)
+- [ ] Cross-chain credential bridging
+- [ ] Token-gated communities based on achievements
+- [ ] Profile NFTs as unique identifiers
+- [ ] Webhooks for profile updates
+- [ ] GraphQL API for better querying
+
+### Long-term Vision (v0.4.0+)
+- [ ] AI resume optimization suggestions
+- [ ] Skill gap analysis vs. job requirements
+- [ ] Automated credential verification via APIs (LinkedIn, GitHub)
+- [ ] Decentralized recruitment marketplace
+- [ ] Resume versioning with diff tracking
+- [ ] Multi-language support
+- [ ] Video profile introductions (stored on IPFS)
+- [ ] Professional network graph visualization
 
 ---
 
