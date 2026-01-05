@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isPinned, unpinFromIPFS, getPinnedContent } from '@/lib/ipfs';
+import { checkPinStatus, unpinFromPinata } from '@/lib/ipfs';
 
 /**
  * GET /api/ipfs/pin/[hash]
- * Check if content is pinned on Pinata
+ * Check pin status of an IPFS hash
  */
 export async function GET(
   request: NextRequest,
@@ -12,36 +12,29 @@ export async function GET(
   try {
     const hash = params.hash;
 
-    if (!hash || hash.length < 46) {
+    if (!hash || hash.length < 10) {
       return NextResponse.json(
-        { 
-          error: 'Invalid IPFS hash',
-          details: 'Hash must be a valid CID'
-        },
+        { error: 'Valid IPFS hash is required' },
         { status: 400 }
       );
     }
 
-    const pinned = await isPinned(hash);
+    const status = await checkPinStatus(hash);
 
     return NextResponse.json(
       {
-        success: true,
-        ipfsHash: hash,
-        pinned,
-        message: pinned ? 'Content is pinned' : 'Content is not pinned'
+        hash,
+        ...status,
+        timestamp: Date.now(),
       },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error checking pin status:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
     return NextResponse.json(
       { 
         error: 'Failed to check pin status',
-        details: errorMessage
+        message: error?.message || 'Unknown error',
       },
       { status: 500 }
     );
@@ -51,6 +44,7 @@ export async function GET(
 /**
  * DELETE /api/ipfs/pin/[hash]
  * Unpin content from Pinata
+ * Note: This should be protected with authentication in production
  */
 export async function DELETE(
   request: NextRequest,
@@ -59,45 +53,40 @@ export async function DELETE(
   try {
     const hash = params.hash;
 
-    if (!hash || hash.length < 46) {
+    if (!hash || hash.length < 10) {
       return NextResponse.json(
-        { 
-          error: 'Invalid IPFS hash',
-          details: 'Hash must be a valid CID'
-        },
+        { error: 'Valid IPFS hash is required' },
         { status: 400 }
       );
     }
 
-    const success = await unpinFromIPFS(hash);
+    // TODO: Add authentication check here
+    // For now, this is a simple demonstration
+    
+    const success = await unpinFromPinata(hash);
 
     if (!success) {
       return NextResponse.json(
-        { 
-          error: 'Failed to unpin content',
-          details: 'Content may not be pinned or credentials are invalid'
-        },
-        { status: 400 }
+        { error: 'Failed to unpin content' },
+        { status: 500 }
       );
     }
 
     return NextResponse.json(
       {
         success: true,
-        ipfsHash: hash,
-        message: 'Content unpinned successfully'
+        hash,
+        message: 'Content unpinned successfully',
+        timestamp: Date.now(),
       },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('Error unpinning content:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+  } catch (error: any) {
+    console.error('Error unpinning from Pinata:', error);
     return NextResponse.json(
       { 
-        error: 'Failed to unpin content',
-        details: errorMessage
+        error: 'Failed to unpin from Pinata',
+        message: error?.message || 'Unknown error',
       },
       { status: 500 }
     );

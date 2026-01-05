@@ -1,30 +1,14 @@
 import { create } from 'ipfs-http-client';
-import axios from 'axios';
+
+const PINATA_BASE_URL = 'https://api.pinata.cloud';
+const NFT_STORAGE_UPLOAD_URL = 'https://api.nft.storage/upload';
 
 const IPFS_GATEWAY = process.env.NEXT_PUBLIC_IPFS_GATEWAY || 'https://gateway.pinata.cloud';
-const PINATA_API_KEY = process.env.PINATA_API_KEY || '';
-const PINATA_SECRET_KEY = process.env.PINATA_SECRET_KEY || '';
-const PINATA_JWT = process.env.PINATA_JWT || '';
-
-// Pinata API endpoints
-const PINATA_PIN_JSON_URL = 'https://api.pinata.cloud/pinning/pinJSONToIPFS';
-const PINATA_PIN_FILE_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
-const PINATA_UNPIN_URL = 'https://api.pinata.cloud/pinning/unpin';
-const PINATA_PIN_LIST_URL = 'https://api.pinata.cloud/data/pinList';
 
 interface IPFSUploadResult {
   path: string;
   cid: string;
   size: number;
-  pinned: boolean;
-  gateway: string;
-}
-
-interface PinataUploadResult {
-  IpfsHash: string;
-  PinSize: number;
-  Timestamp: string;
-  isDuplicate?: boolean;
 }
 
 interface ResumeData {
@@ -62,101 +46,69 @@ interface ProjectEntry {
 }
 
 /**
- * Upload resume data to IPFS with Pinata pinning
- * Uses Pinata for reliable persistent storage
+ * Upload resume data to IPFS
  */
-export async function uploadResumeToIPFS(resumeData: ResumeData): Promise<IPFSUploadResult> {
+export async function uploadResumeToIPFS(resumeData: ResumeData): Promise<string> {
   try {
-    // Validate Pinata credentials
-    if (!PINATA_JWT && (!PINATA_API_KEY || !PINATA_SECRET_KEY)) {
-      throw new Error('Pinata credentials not configured');
-    }
+    const ipfs = create({
+      host: 'ipfs.infura.io',
+      port: 5001,
+      protocol: 'https',
+    });
 
-    // Prepare headers
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+    const file = {
+      path: `resume-${resumeData.address}.json`,
+      content: JSON.stringify(resumeData),
     };
 
-    if (PINATA_JWT) {
-      headers['Authorization'] = `Bearer ${PINATA_JWT}`;
-    } else {
-      headers['pinata_api_key'] = PINATA_API_KEY;
-      headers['pinata_secret_api_key'] = PINATA_SECRET_KEY;
-    }
-
-    // Prepare metadata
-    const metadata = {
-      name: `resume-${resumeData.address}-${Date.now()}.json`,
-      keyvalues: {
-        address: resumeData.address,
-        timestamp: resumeData.timestamp.toString(),
-        type: 'resume',
-      },
-    };
-
-    // Upload to Pinata
-    const response = await axios.post(
-      PINATA_PIN_JSON_URL,
-      {
-        pinataContent: resumeData,
-        pinataMetadata: metadata,
-        pinataOptions: {
-          cidVersion: 1,
-        },
-      },
-      { headers }
-    );
-
-    const result: PinataUploadResult = response.data;
-
-    return {
-      path: result.IpfsHash,
-      cid: result.IpfsHash,
-      size: result.PinSize,
-      pinned: true,
-      gateway: `${IPFS_GATEWAY}/ipfs/${result.IpfsHash}`,
-    };
+    const result = await ipfs.add(file);
+    return result.path;
   } catch (error) {
     console.error('Error uploading to IPFS:', error);
-    throw new Error(`Failed to upload to IPFS: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error;
   }
+}
+
+type IpfsProvider = 'pinata' | 'nftstorage' | 'infura';
+
+interface UploadResponse {
+  hash: string;
+  url: string;
+  provider: IpfsProvider;
+}
+
+/**
+ * Upload resume JSON to a selected provider (Pinata, NFT.Storage, or Infura IPFS)
+ */
+export async function uploadResume(resumeData: ResumeData, provider: IpfsProvider = 'pinata'): Promise<UploadResponse> {
+  if (provider === 'pinata') {
+    const { hash, url } = await uploadJSONToIPFS(resumeData);
+    return { hash, url, provider };
+  }
+
+  if (provider === 'nftstorage') {
+    const { hash, url } = await uploadJSONToNFTStorage(resumeData);
+    return { hash, url, provider };
+  }
+
+  const hash = await uploadResumeToIPFS(resumeData);
+  return { hash, url: `${IPFS_GATEWAY}/ipfs/${hash}`, provider: 'infura' };
 }
 
 /**
  * Fetch resume data from IPFS
- * Tries multiple gateways for reliability
  */
 export async function fetchResumeFromIPFS(ipfsHash: string): Promise<ResumeData | null> {
-  const gateways = [
-    `${IPFS_GATEWAY}/ipfs/${ipfsHash}`,
-    `https://ipfs.io/ipfs/${ipfsHash}`,
-    `https://cloudflare-ipfs.com/ipfs/${ipfsHash}`,
-    `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
-  ];
-
-  // Try each gateway until one succeeds
-  for (const gateway of gateways) {
-    try {
-      const response = await fetch(gateway, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-        next: { revalidate: 3600 }, // Cache for 1 hour
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return data;
-      }
-    } catch (error) {
-      console.warn(`Failed to fetch from gateway ${gateway}:`, error);
-      continue;
+  try {
+    const response = await fetch(`${IPFS_GATEWAY}/ipfs/${ipfsHash}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch from IPFS');
     }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching from IPFS:', error);
+    return null;
   }
-
-  console.error('All gateways failed for IPFS hash:', ipfsHash);
-  return null;
 }
 
 /**
@@ -167,172 +119,158 @@ export function getIPFSGatewayUrl(ipfsHash: string): string {
 }
 
 /**
- * Upload any JSON data to IPFS via Pinata
+ * Upload JSON data to IPFS via Pinata
  */
-export async function uploadJSONToIPFS(
-  data: any,
-  metadata?: { name?: string; keyvalues?: Record<string, string> }
-): Promise<IPFSUploadResult> {
+export async function uploadJSONToIPFS(data: any): Promise<{ hash: string; url: string }> {
   try {
-    if (!PINATA_JWT && (!PINATA_API_KEY || !PINATA_SECRET_KEY)) {
-      throw new Error('Pinata credentials not configured');
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (PINATA_JWT) {
-      headers['Authorization'] = `Bearer ${PINATA_JWT}`;
-    } else {
-      headers['pinata_api_key'] = PINATA_API_KEY;
-      headers['pinata_secret_api_key'] = PINATA_SECRET_KEY;
-    }
-
-    const pinataMetadata = {
-      name: metadata?.name || `data-${Date.now()}.json`,
-      keyvalues: metadata?.keyvalues || {},
-    };
-
-    const response = await axios.post(
-      PINATA_PIN_JSON_URL,
-      {
+    const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'pinata_api_key': process.env.PINATA_API_KEY || '',
+        'pinata_secret_api_key': process.env.PINATA_SECRET_KEY || '',
+      },
+      body: JSON.stringify({
         pinataContent: data,
-        pinataMetadata,
-        pinataOptions: {
-          cidVersion: 1,
+        pinataMetadata: {
+          name: `resume-${Date.now()}.json`,
         },
-      },
-      { headers }
-    );
+      }),
+    });
 
-    const result: PinataUploadResult = response.data;
+    if (!response.ok) {
+      throw new Error('Failed to upload to IPFS');
+    }
 
+    const result = await response.json();
     return {
-      path: result.IpfsHash,
-      cid: result.IpfsHash,
-      size: result.PinSize,
-      pinned: true,
-      gateway: `${IPFS_GATEWAY}/ipfs/${result.IpfsHash}`,
+      hash: result.IpfsHash,
+      url: `${IPFS_GATEWAY}/ipfs/${result.IpfsHash}`,
     };
   } catch (error) {
-    console.error('Error uploading JSON to IPFS:', error);
-    throw new Error(`Failed to upload to IPFS: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Error uploading to IPFS:', error);
+    throw error;
   }
 }
 
 /**
- * Unpin content from Pinata (remove from persistent storage)
+ * Upload JSON to NFT.Storage
  */
-export async function unpinFromIPFS(ipfsHash: string): Promise<boolean> {
-  try {
-    if (!PINATA_JWT && (!PINATA_API_KEY || !PINATA_SECRET_KEY)) {
-      throw new Error('Pinata credentials not configured');
-    }
-
-    const headers: Record<string, string> = {};
-
-    if (PINATA_JWT) {
-      headers['Authorization'] = `Bearer ${PINATA_JWT}`;
-    } else {
-      headers['pinata_api_key'] = PINATA_API_KEY;
-      headers['pinata_secret_api_key'] = PINATA_SECRET_KEY;
-    }
-
-    await axios.delete(`${PINATA_UNPIN_URL}/${ipfsHash}`, { headers });
-    return true;
-  } catch (error) {
-    console.error('Error unpinning from IPFS:', error);
-    return false;
+export async function uploadJSONToNFTStorage(data: any): Promise<{ hash: string; url: string }> {
+  const token = process.env.NFT_STORAGE_TOKEN || '';
+  if (!token) {
+    throw new Error('NFT_STORAGE_TOKEN is required');
   }
+
+  const body = typeof data === 'string' ? data : JSON.stringify(data);
+
+  const response = await fetch(NFT_STORAGE_UPLOAD_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`NFT.Storage upload failed: ${text}`);
+  }
+
+  const result = await response.json();
+  const cid = result?.value?.cid || result?.cid;
+  if (!cid) {
+    throw new Error('NFT.Storage response missing cid');
+  }
+
+  return {
+    hash: cid,
+    url: `${IPFS_GATEWAY}/ipfs/${cid}`,
+  };
 }
 
 /**
- * Check if content is pinned on Pinata
+ * Pin resume to IPFS (persistent storage)
  */
-export async function isPinned(ipfsHash: string): Promise<boolean> {
+export async function pinResumeToIPFS(resumeData: ResumeData): Promise<string> {
   try {
-    if (!PINATA_JWT && (!PINATA_API_KEY || !PINATA_SECRET_KEY)) {
-      return false;
-    }
-
-    const headers: Record<string, string> = {};
-
-    if (PINATA_JWT) {
-      headers['Authorization'] = `Bearer ${PINATA_JWT}`;
-    } else {
-      headers['pinata_api_key'] = PINATA_API_KEY;
-      headers['pinata_secret_api_key'] = PINATA_SECRET_KEY;
-    }
-
-    const response = await axios.get(PINATA_PIN_LIST_URL, {
-      headers,
-      params: {
-        hashContains: ipfsHash,
-        status: 'pinned',
-      },
+    const ipfs = create({
+      host: 'ipfs.infura.io',
+      port: 5001,
+      protocol: 'https',
     });
 
-    return response.data.count > 0;
-  } catch (error) {
-    console.error('Error checking pin status:', error);
-    return false;
-  }
-}
+    const file = {
+      path: `resume-${resumeData.address}.json`,
+      content: JSON.stringify(resumeData),
+    };
 
-/**
- * Get list of pinned content for an address
- */
-export async function getPinnedContent(address: string): Promise<string[]> {
-  try {
-    if (!PINATA_JWT && (!PINATA_API_KEY || !PINATA_SECRET_KEY)) {
-      return [];
-    }
-
-    const headers: Record<string, string> = {};
-
-    if (PINATA_JWT) {
-      headers['Authorization'] = `Bearer ${PINATA_JWT}`;
-    } else {
-      headers['pinata_api_key'] = PINATA_API_KEY;
-      headers['pinata_secret_api_key'] = PINATA_SECRET_KEY;
-    }
-
-    const response = await axios.get(PINATA_PIN_LIST_URL, {
-      headers,
-      params: {
-        status: 'pinned',
-        metadata: {
-          keyvalues: {
-            address: {
-              value: address,
-              op: 'eq',
-            },
-          },
-        },
-      },
+    const result = await ipfs.add(file, {
+      pin: true,
+      progress: (prog) => console.log(`Progress: ${prog}`),
     });
 
-    return response.data.rows.map((row: any) => row.ipfs_pin_hash);
+    return result.path;
   } catch (error) {
-    console.error('Error fetching pinned content:', error);
-    return [];
+    console.error('Error pinning to IPFS:', error);
+    throw error;
   }
 }
 
 /**
- * Validate resume data structure
+ * Check pin status from Pinata
  */
-export function validateResumeData(data: any): data is ResumeData {
-  return (
-    typeof data === 'object' &&
-    typeof data.address === 'string' &&
-    typeof data.name === 'string' &&
-    typeof data.bio === 'string' &&
-    Array.isArray(data.skills) &&
-    Array.isArray(data.experience) &&
-    Array.isArray(data.education) &&
-    Array.isArray(data.projects) &&
-    typeof data.timestamp === 'number'
-  );
+export async function checkPinStatus(hash: string): Promise<{ pinned: boolean; status: string }> {
+  const apiKey = process.env.PINATA_API_KEY || '';
+  const secretKey = process.env.PINATA_SECRET_KEY || '';
+  if (!apiKey || !secretKey) {
+    throw new Error('Pinata API keys are required');
+  }
+
+  const url = `${PINATA_BASE_URL}/data/pinList?hashContains=${hash}`;
+  const response = await fetch(url, {
+    headers: {
+      'pinata_api_key': apiKey,
+      'pinata_secret_api_key': secretKey,
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to check pin status: ${text}`);
+  }
+
+  const result = await response.json();
+  const rows = result?.rows || [];
+  const matched = rows.find((row: any) => row.ipfs_pin_hash === hash);
+  const status = matched?.ipfs_pin_status || 'not_pinned';
+  return { pinned: status === 'pinned', status };
+}
+
+/**
+ * Unpin content from Pinata
+ */
+export async function unpinFromPinata(hash: string): Promise<boolean> {
+  const apiKey = process.env.PINATA_API_KEY || '';
+  const secretKey = process.env.PINATA_SECRET_KEY || '';
+  if (!apiKey || !secretKey) {
+    throw new Error('Pinata API keys are required');
+  }
+
+  const response = await fetch(`${PINATA_BASE_URL}/pinning/unpin/${hash}`, {
+    method: 'DELETE',
+    headers: {
+      'pinata_api_key': apiKey,
+      'pinata_secret_api_key': secretKey,
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error('Unpin failed:', text);
+    return false;
+  }
+
+  return true;
 }

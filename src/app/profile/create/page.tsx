@@ -2,14 +2,19 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useAccount } from "wagmi";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useContractWrite, useWaitForTransaction } from "wagmi";
 import { ON_CHAIN_RESUME_ABI, CONTRACT_ADDRESS } from "@/lib/contract";
+import { ResumeUploadForm } from "@/components/ResumeUploadForm";
 
 export default function CreateProfilePage() {
   const { address, isConnected } = useAccount();
   const contractAddress = useMemo(() => (CONTRACT_ADDRESS || process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "") as `0x${string}` | "", []);
-  const { data: txHash, isPending, error, writeContract } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash: txHash });
+  const { data: txHash, isLoading: isPending, error, write } = useContractWrite({
+    address: contractAddress || undefined,
+    abi: ON_CHAIN_RESUME_ABI,
+    functionName: "createProfile",
+  });
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransaction({ hash: txHash as `0x${string}` | undefined });
 
   const [handle, setHandle] = useState("");
   const [ipfsHash, setIpfsHash] = useState("");
@@ -22,10 +27,7 @@ export default function CreateProfilePage() {
       return;
     }
     setStatus(null);
-    writeContract({
-      address: contractAddress,
-      abi: ON_CHAIN_RESUME_ABI,
-      functionName: "createProfile",
+    write?.({
       args: [handle, ipfsHash],
     });
   };
@@ -81,18 +83,26 @@ export default function CreateProfilePage() {
 
         {status && <div className="text-amber-300 text-sm">{status}</div>}
         {error && <div className="text-rose-300 text-sm">{error.message}</div>}
-        {isSuccess && txHash && (
-          <div className="text-green-300 text-sm">Transaction confirmed: {txHash}</div>
+        {isSuccess && txHash?.hash && (
+          <div className="text-green-300 text-sm">Transaction confirmed: {txHash.hash}</div>
         )}
       </form>
 
-      <div className="glass-effect rounded-2xl p-6 border border-white/10">
-        <h2 className="text-xl font-semibold mb-2">Tips</h2>
-        <ul className="list-disc list-inside text-slate-300 text-sm space-y-1">
-          <li>Test on Base Sepolia or Stacks testnet before mainnet.</li>
-          <li>Keep JSON payloads small to minimize gas; store media on IPFS.</li>
-          <li>After creating, visit /profile/[handle] to verify the on-chain state.</li>
-        </ul>
+      <div className="glass-effect rounded-2xl p-6 border border-white/10 space-y-6">
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Step 1: Upload resume to IPFS</h2>
+          <p className="text-slate-300 text-sm mb-4">Paste your structured resume JSON below. Choose your IPFS provider (Pinata, NFT.Storage, or Infura) and upload to get the content hash.</p>
+          <ResumeUploadForm />
+        </div>
+        <hr className="border-white/10" />
+        <div>
+          <h2 className="text-xl font-semibold mb-2">Tips</h2>
+          <ul className="list-disc list-inside text-slate-300 text-sm space-y-1">
+            <li>Test on Base Sepolia or Stacks testnet before mainnet.</li>
+            <li>Keep JSON payloads small to minimize gas; store media on IPFS.</li>
+            <li>After creating, visit /profile/[handle] to verify the on-chain state.</li>
+          </ul>
+        </div>
       </div>
     </div>
   );

@@ -13,6 +13,8 @@ export interface AchievementBadge {
   unlockedAt?: string;
   nftTokenId?: number;
   metadataURI?: string;
+  soulbound?: boolean; // Non-transferable badge (credential proofs)
+  category?: 'achievement' | 'credential'; // Badge type for UI
 }
 
 interface AchievementBadgesProps {
@@ -141,8 +143,23 @@ export function AchievementBadges({ badges, onMintNFT }: AchievementBadgesProps)
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold"
+                    title={badge.soulbound ? "Soulbound NFT" : "NFT Minted"}
                   >
-                    ✓
+                    {badge.soulbound ? '🔒' : '✓'}
+                  </motion.div>
+                </div>
+              )}
+
+              {/* Soulbound Badge */}
+              {badge.unlocked && badge.soulbound && (
+                <div className="absolute top-2 left-2">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="px-2 py-0.5 rounded-full text-xs font-bold bg-purple-500/80 text-white"
+                    title="Permanently bound to this wallet - not transferable"
+                  >
+                    ✦ SOUL
                   </motion.div>
                 </div>
               )}
@@ -225,9 +242,26 @@ export function AchievementBadges({ badges, onMintNFT }: AchievementBadgesProps)
 
             {/* NFT Status */}
             {selectedBadge.nftTokenId !== undefined ? (
-              <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 text-center">
-                <p className="text-green-300 font-semibold mb-1">NFT Minted! 🎉</p>
-                <p className="text-green-400/70 text-sm">Token ID: #{selectedBadge.nftTokenId}</p>
+              <div className={`p-4 rounded-xl border text-center mb-4 ${
+                selectedBadge.soulbound 
+                  ? 'bg-purple-500/10 border-purple-500/30' 
+                  : 'bg-green-500/10 border-green-500/30'
+              }`}>
+                <p className={`font-semibold mb-1 ${
+                  selectedBadge.soulbound ? 'text-purple-300' : 'text-green-300'
+                }`}>
+                  {selectedBadge.soulbound ? '🔒 NFT Minted (Soulbound)' : '✓ NFT Minted!'}
+                </p>
+                <p className={`text-sm ${
+                  selectedBadge.soulbound ? 'text-purple-400/70' : 'text-green-400/70'
+                }`}>
+                  Token ID: #{selectedBadge.nftTokenId}
+                </p>
+                {selectedBadge.soulbound && (
+                  <p className="text-xs text-purple-400/60 mt-2">
+                    ✦ Permanently bound to your wallet • Not transferable
+                  </p>
+                )}
               </div>
             ) : (
               onMintNFT && (
@@ -236,7 +270,7 @@ export function AchievementBadges({ badges, onMintNFT }: AchievementBadgesProps)
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleMintNFT(selectedBadge.id)}
                   disabled={isMinting}
-                  className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-4"
                 >
                   {isMinting ? 'Minting NFT...' : 'Mint as NFT Badge'}
                 </motion.button>

@@ -68,7 +68,7 @@ export default function HomePage() {
             View achievements
           </Link>
         </div>
-        <AnimatedTimeline />
+        <AnimatedTimeline events={[]} />
       </section>
     </div>
   );
