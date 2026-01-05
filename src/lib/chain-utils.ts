@@ -1,4 +1,4 @@
-import { useAccount, useChainId } from 'wagmi';
+import { useAccount, useChainId, useSwitchNetwork } from 'wagmi';
 import { useCallback, useEffect, useState } from 'react';
 import { ChainType, NETWORKS, EVM_NETWORKS, STACKS_NETWORKS } from './web3-config';
 import { StacksWalletType } from './stacks-config';
@@ -32,7 +32,7 @@ export enum WalletType {
 export function useChainDetection() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
+  const { switchNetwork } = useSwitchNetwork();
   const [currentChain, setCurrentChain] = useState<ChainInfo | null>(null);
   const [isStacksChain, setIsStacksChain] = useState(false);
   const [isEvmChain, setIsEvmChain] = useState(true);
@@ -61,15 +61,15 @@ export function useChainDetection() {
         console.log('Switching to Stacks chain:', chainId);
         // Handle Stacks switching (requires Hiro, Xverse, or Leather wallet)
       } else {
-        // EVM chain - use wagmi's switchChain
+        // EVM chain - use wagmi's switchNetwork
         try {
-          await switchChain?.({ chainId });
+          await switchNetwork?.({ chainId });
         } catch (error) {
           console.error('Failed to switch chain:', error);
         }
       }
     },
-    [switchChain]
+    [switchNetwork]
   );
 
   return {

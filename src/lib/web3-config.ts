@@ -1,24 +1,29 @@
-import { createConfig } from 'wagmi';
-import { http } from 'wagmi';
+import { createConfig, configureChains } from 'wagmi';
 import { base, baseSepolia, mainnet, sepolia } from 'wagmi/chains';
-import { injected, metaMaskConnector, walletConnectConnector } from '@wagmi/connectors';
+import { publicProvider } from 'wagmi/providers/public';
+import { InjectedConnector } from 'wagmi/connectors/injected';
+import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
 
+const { chains, publicClient, webSocketPublicClient } = configureChains(
+  [base, baseSepolia, mainnet, sepolia],
+  [publicProvider()]
+);
+
 export const config = createConfig({
-  chains: [base, baseSepolia, mainnet, sepolia],
+  autoConnect: true,
   connectors: [
-    injected(),
-    metaMaskConnector(),
-    walletConnectConnector({ projectId }),
+    new InjectedConnector({ chains }),
+    new WalletConnectConnector({
+      chains,
+      options: {
+        projectId,
+      },
+    }),
   ],
-  transports: {
-    [base.id]: http(),
-    [baseSepolia.id]: http(),
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
-  },
-  ssr: true,
+  publicClient,
+  webSocketPublicClient,
 });
 
 // Chain Types
