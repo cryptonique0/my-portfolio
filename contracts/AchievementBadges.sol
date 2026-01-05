@@ -31,6 +31,7 @@ contract AchievementBadges is
         uint256 maxSupply;           // Maximum badges that can exist (0 = unlimited)
         uint256 currentSupply;       // Current number minted
         bool isActive;               // Can new badges be minted?
+        bool isSoulbound;            // Is badge non-transferable? ⭐ NEW
         string imageURI;             // IPFS URI for badge image
         uint256 createdAt;           // Creation timestamp
     }
@@ -150,6 +151,7 @@ contract AchievementBadges is
             maxSupply: maxSupply,
             currentSupply: 0,
             isActive: true,
+            isSoulbound: false,  // Default to transferable ⭐
             imageURI: imageURI,
             createdAt: block.timestamp
         });
@@ -407,9 +409,19 @@ contract AchievementBadges is
         _unpause();
     }
 
+    /// @notice Set soulbound status for a badge ⭐ NEW
+    /// @param badgeId Badge to update
+    /// @param isSoulbound Whether badge should be non-transferable
+    function setSoulbound(uint256 badgeId, bool isSoulbound) external onlyOwner {
+        require(badges[badgeId].createdAt > 0, "Badge does not exist");
+        badges[badgeId].isSoulbound = isSoulbound;
+        emit BadgeMetadataUpdated(badgeId, badges[badgeId].name);
+    }
+
     // ============ Override Functions ============
 
     /// @notice Hook that is called before any token transfer
+    /// @dev Blocks transfers for soulbound badges ⭐ ENHANCED
     function _beforeTokenTransfer(
         address operator,
         address from,
@@ -418,6 +430,16 @@ contract AchievementBadges is
         uint256[] memory amounts,
         bytes memory data
     ) internal override(ERC1155, ERC1155Supply) whenNotPaused {
+        // Allow minting (from = 0) and burning (to = 0)
+        if (from != address(0) && to != address(0)) {
+            // Check if any badges are soulbound
+            for (uint256 i = 0; i < ids.length; i++) {
+                require(
+                    !badges[ids[i]].isSoulbound,
+                    "Soulbound badge cannot be transferred"
+                );
+            }
+        }
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }
 
