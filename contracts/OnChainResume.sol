@@ -96,6 +96,50 @@ contract OnChainResume {
         uint256 timestamp
     );
 
+    /// @notice Emitted when a user stakes funds for a reputation boost
+    /// @param user Address of the staker
+    /// @param amount Amount of ETH staked
+    /// @param lockDuration Lock duration in seconds
+    /// @param timestamp Block timestamp of staking action
+    event Staked(
+        address indexed user,
+        uint256 amount,
+        uint256 lockDuration,
+        uint256 timestamp
+    );
+
+    /// @notice Emitted when a user unstakes funds
+    /// @param user Address of the staker
+    /// @param amount Amount of ETH returned
+    /// @param timestamp Block timestamp of unstaking
+    event Unstaked(
+        address indexed user,
+        uint256 amount,
+        uint256 timestamp
+    );
+
+    /// @notice Emitted when a credential is flagged for fraud/abuse
+    /// @param user Owner of the credential
+    /// @param credentialIndex Index of the credential flagged
+    /// @param flagged True if flagged, false if cleared
+    /// @param timestamp Block timestamp of the flag action
+    event CredentialFlagged(
+        address indexed user,
+        uint256 credentialIndex,
+        bool flagged,
+        uint256 timestamp
+    );
+
+    /// @notice Emitted when an activity streak is updated
+    /// @param user Owner of the profile
+    /// @param streakCount New streak count
+    /// @param timestamp Block timestamp of update
+    event ActivityStreakUpdated(
+        address indexed user,
+        uint256 streakCount,
+        uint256 timestamp
+    );
+
     // ============ Structs ============
     
     /// @notice Profile data structure (optimized for storage)
@@ -106,8 +150,10 @@ contract OnChainResume {
         address owner;              // 20 bytes - Profile owner address
         uint64 createdAt;           // 8 bytes  - Profile creation timestamp
         uint64 updatedAt;           // 8 bytes  - Last profile update timestamp
+        uint64 lastActiveAt;        // 8 bytes  - Last action timestamp used for streaks
         uint32 reputationScore;     // 4 bytes  - Reputation score (max 4.2B)
         uint16 credentialCount;     // 2 bytes  - Total credentials (max 65535)
+        uint16 activityStreak;      // 2 bytes  - Activity streak counter (capped)
         bool verified;              // 1 byte   - Whether profile is verified
         string handle;              // New slot - Unique username
         string ipfsHash;            // New slot - IPFS hash of profile metadata
@@ -121,7 +167,9 @@ contract OnChainResume {
         uint64 issuedDate;           // 8 bytes - Unix timestamp of issue date
         uint64 expiryDate;           // 8 bytes - Unix timestamp of expiry (0 = no expiry)
         uint16 verificationCount;    // 2 bytes - Number of verifications received
+        uint16 verificationWeight;   // 2 bytes - Accumulated verifier weight
         bool verified;               // 1 byte  - Whether credential is verified
+        bool flagged;                // 1 byte  - Whether credential is flagged/slashed
         string credentialType;       // New slot - Type/name of credential
         string issuer;               // New slot - Issuing organization
         string proofUrl;             // New slot - URL/IPFS hash of proof
@@ -146,10 +194,27 @@ contract OnChainResume {
         uint256 verifiedCredentialBonus;    // Bonus for verified credentials
         uint256 achievementScore;           // Score from achievements
         uint256 activityScore;              // Score from profile updates/activity
+        uint256 stakeBoost;                 // Score from active staking positions
+        uint256 streakBonus;                // Score from activity streaks
+        uint256 flagPenalty;                // Penalty applied for flagged credentials
         uint256 totalScore;                 // Total calculated reputation
         uint256 credentialCount;            // Total credentials owned
         uint256 verifiedCredentialCount;    // Number of verified credentials
         uint256 achievementCount;           // Total achievements
+    }
+
+    /// @notice Staking position for reputation boosts
+    struct StakePosition {
+        uint128 amount;              // 16 bytes - Amount of ETH staked
+        uint64 stakedAt;             // 8 bytes  - Timestamp when stake was created
+        uint64 lockDuration;         // 8 bytes  - Lock duration in seconds
+        bool active;                 // 1 byte   - Whether stake is currently active
+    }
+
+    /// @notice Tracks verifier credibility to weight verifications
+    struct VerifierStats {
+        uint16 successfulVerifications; // Number of credentials that reached threshold with this verifier
+        uint16 weight;                  // Current verifier weight (bounded)
     }
 
     // ============ Reputation Scoring Constants ============
@@ -177,6 +242,42 @@ contract OnChainResume {
     /// @notice Activity bonus for profile updates
     /// @dev Points for profile engagement and updates
     uint256 public constant SCORE_PROFILE_UPDATE = 3;
+
+    /// @notice Base verifier weight used to compute credential verification weight
+    uint256 public constant BASE_VERIFIER_WEIGHT = 10;
+
+    /// @notice Maximum verifier weight to limit outsized influence
+    uint256 public constant MAX_VERIFIER_WEIGHT = 40;
+
+    /// @notice Minimum cumulative verification weight for a credential to be considered verified
+    uint256 public constant VERIFICATION_WEIGHT_THRESHOLD = 20;
+
+    /// @notice Reputation penalty per flagged credential
+    uint256 public constant FLAGGED_CREDENTIAL_PENALTY = 10;
+
+    /// @notice Minimum stake amount (in wei) required to activate staking boost
+    uint256 public constant STAKE_MIN_AMOUNT = 0.05 ether;
+
+    /// @notice Reputation points earned per ETH staked (capped)
+    uint256 public constant STAKE_POINTS_PER_ETH = 30;
+
+    /// @notice Maximum staking-derived reputation points
+    uint256 public constant STAKE_POINTS_CAP = 150;
+
+    /// @notice Bonus points per 30-day lock period for staking
+    uint256 public constant STAKE_LOCK_BONUS_PER_MONTH = 5;
+
+    /// @notice Maximum lock duration allowed for staking boosts (in seconds)
+    uint256 public constant STAKE_MAX_LOCK = 365 days;
+
+    /// @notice Minimum lock duration to be eligible for staking boosts (in seconds)
+    uint256 public constant STAKE_MIN_LOCK = 30 days;
+
+    /// @notice Bonus points per activity streak increment
+    uint256 public constant STREAK_BONUS = 2;
+
+    /// @notice Maximum activity streak bonus applied
+    uint256 public constant STREAK_BONUS_CAP = 50;
     
     /// @dev Mapping from user address to their profile - primary data structure
     mapping(address => Profile) public profiles;
@@ -187,6 +288,12 @@ contract OnChainResume {
     
     /// @dev Mapping from user address to array of their achievements
     mapping(address => Achievement[]) private userAchievements;
+
+    /// @dev Mapping from user to active staking position
+    mapping(address => StakePosition) public stakes;
+
+    /// @dev Mapping from verifier address to their credibility stats
+    mapping(address => VerifierStats) public verifierStats;
     
     /// @dev Mapping to track single-address verifications: user => verifier => credentialIndex => verified
     /// Prevents duplicate verifications and tracks multiple verifications per credential
@@ -237,6 +344,66 @@ contract OnChainResume {
         _;
     }
 
+    // ============ Internal Helpers ============
+
+    /// @notice Update activity metadata and streak for a user
+    /// @dev Resets streak if inactivity exceeds 45 days
+    /// @param user Profile owner being updated
+    function _touchActivity(address user) internal {
+        Profile storage profile = profiles[user];
+        uint64 nowTs = uint64(block.timestamp);
+        uint64 lastActive = profile.lastActiveAt;
+
+        if (lastActive == 0) {
+            profile.activityStreak = 1;
+        } else {
+            uint64 daysSince = (nowTs - lastActive) / 1 days;
+            if (daysSince <= 45) {
+                uint16 newStreak = profile.activityStreak + 1;
+                if (newStreak > STREAK_BONUS_CAP) {
+                    newStreak = uint16(STREAK_BONUS_CAP);
+                }
+                profile.activityStreak = newStreak;
+            } else {
+                profile.activityStreak = 1;
+            }
+        }
+
+        profile.lastActiveAt = nowTs;
+        profile.updatedAt = nowTs;
+        emit ActivityStreakUpdated(user, profile.activityStreak, nowTs);
+    }
+
+    /// @notice Compute staking reputation boost for a user
+    /// @param user Profile owner
+    /// @return boost Reputation points from active staking
+    function _stakeBoost(address user) internal view returns (uint256 boost) {
+        StakePosition memory stakePos = stakes[user];
+        if (!stakePos.active) {
+            return 0;
+        }
+
+        // Only count boost while within lock period
+        if (block.timestamp > stakePos.stakedAt + stakePos.lockDuration) {
+            return 0;
+        }
+
+        uint256 amountPoints = (uint256(stakePos.amount) * STAKE_POINTS_PER_ETH) / 1 ether;
+        if (amountPoints > STAKE_POINTS_CAP) {
+            amountPoints = STAKE_POINTS_CAP;
+        }
+
+        uint256 lockBonus = (uint256(stakePos.lockDuration) / 30 days) * STAKE_LOCK_BONUS_PER_MONTH;
+        boost = amountPoints + lockBonus;
+    }
+
+    /// @notice Update cached reputation score for a user based on on-chain data
+    /// @param user Profile owner
+    function _refreshCachedReputation(address user) internal {
+        uint256 computed = _calculateReputation(user);
+        profiles[user].reputationScore = uint32(computed);
+    }
+
     // ============ Profile Functions ============
 
     /// @notice Create a new user profile on the platform
@@ -263,14 +430,19 @@ contract OnChainResume {
             ipfsHash: _ipfsHash,
             createdAt: uint64(block.timestamp),
             updatedAt: uint64(block.timestamp),
+            lastActiveAt: uint64(block.timestamp),
             reputationScore: 0,
             credentialCount: 0,
+            activityStreak: 0,
             verified: false
         });
 
         handleToAddress[_handle] = msg.sender;
         allUsers.push(msg.sender);
         profileCount++;
+
+        // Initialize cached reputation to base score
+        _refreshCachedReputation(msg.sender);
 
         emit ProfileCreated(msg.sender, _handle, _ipfsHash, block.timestamp);
     }
@@ -288,7 +460,9 @@ contract OnChainResume {
         require(bytes(_ipfsHash).length > 0, "IPFS hash cannot be empty");
         
         profiles[msg.sender].ipfsHash = _ipfsHash;
-        profiles[msg.sender].updatedAt = uint64(block.timestamp);
+        _touchActivity(msg.sender);
+
+        _refreshCachedReputation(msg.sender);
 
         emit ProfileUpdated(msg.sender, _ipfsHash, block.timestamp);
     }
@@ -353,11 +527,16 @@ contract OnChainResume {
             expiryDate: _expiryDate,
             proofUrl: _proofUrl,
             verified: false,
-            verificationCount: 0
+            flagged: false,
+            verificationCount: 0,
+            verificationWeight: 0
         }));
 
         // Cache credential count in profile for O(1) access
         profiles[msg.sender].credentialCount = uint16(userCredentials[msg.sender].length);
+
+        _touchActivity(msg.sender);
+        _refreshCachedReputation(msg.sender);
 
         uint256 credentialIndex = userCredentials[msg.sender].length - 1;
         emit CredentialAdded(
@@ -390,10 +569,37 @@ contract OnChainResume {
         cred.verificationCount++;
         verificationMap[_user][msg.sender][_credentialIndex] = true;
 
-        // Mark as verified if verified by 2 or more independent sources
-        if (cred.verificationCount >= 2) {
-            cred.verified = true;
+        VerifierStats storage stats = verifierStats[msg.sender];
+        uint16 effectiveWeight = stats.weight >= BASE_VERIFIER_WEIGHT
+            ? stats.weight
+            : uint16(BASE_VERIFIER_WEIGHT);
+
+        uint256 newWeight = uint256(cred.verificationWeight) + uint256(effectiveWeight);
+        if (newWeight > type(uint16).max) {
+            cred.verificationWeight = type(uint16).max;
+        } else {
+            cred.verificationWeight = uint16(newWeight);
         }
+
+        // Mark as verified once cumulative weight passes the threshold
+        if (cred.verificationWeight >= VERIFICATION_WEIGHT_THRESHOLD) {
+            cred.verified = true;
+            stats.successfulVerifications++;
+
+            uint16 boostedWeight = stats.weight + 2;
+            if (boostedWeight < BASE_VERIFIER_WEIGHT) {
+                boostedWeight = uint16(BASE_VERIFIER_WEIGHT);
+            }
+            if (boostedWeight > MAX_VERIFIER_WEIGHT) {
+                boostedWeight = uint16(MAX_VERIFIER_WEIGHT);
+            }
+            stats.weight = boostedWeight;
+        } else if (stats.weight == 0) {
+            // Initialize baseline weight for new verifiers
+            stats.weight = uint16(BASE_VERIFIER_WEIGHT);
+        }
+
+        _refreshCachedReputation(_user);
 
         emit CredentialVerified(_user, _credentialIndex, msg.sender, block.timestamp);
     }
@@ -495,9 +701,9 @@ contract OnChainResume {
             verified: false
         }));
 
-        // Increase reputation for unlocking achievement
+        _touchActivity(msg.sender);
         uint256 oldScore = profiles[msg.sender].reputationScore;
-        profiles[msg.sender].reputationScore += 10;
+        _refreshCachedReputation(msg.sender);
 
         emit AchievementUnlocked(msg.sender, _title, block.timestamp);
         emit ReputationScoreUpdated(msg.sender, oldScore, profiles[msg.sender].reputationScore);
@@ -518,6 +724,50 @@ contract OnChainResume {
     /// @custom:gas O(1) read operation
     function getAchievementCount(address user) external view returns (uint256) {
         return userAchievements[user].length;
+    }
+
+    // ============ Staking Functions ============
+
+    /// @notice Stake ETH to receive a time-locked reputation boost
+    /// @dev Requires a minimum amount and lock duration; only one active stake per user
+    /// @param _lockDuration Lock duration in seconds (between STAKE_MIN_LOCK and STAKE_MAX_LOCK)
+    function stake(uint64 _lockDuration) external payable profileExists(msg.sender) {
+        require(msg.value >= STAKE_MIN_AMOUNT, "Stake too small");
+        require(_lockDuration >= STAKE_MIN_LOCK && _lockDuration <= STAKE_MAX_LOCK, "Invalid lock");
+
+        StakePosition storage position = stakes[msg.sender];
+        require(!position.active, "Existing stake active");
+
+        position.amount = uint128(msg.value);
+        position.stakedAt = uint64(block.timestamp);
+        position.lockDuration = _lockDuration;
+        position.active = true;
+
+        _refreshCachedReputation(msg.sender);
+
+        emit Staked(msg.sender, msg.value, _lockDuration, block.timestamp);
+    }
+
+    /// @notice Unstake ETH after the lock period ends
+    /// @dev Returns principal; clears staking position and refreshes reputation
+    function unstake() external profileExists(msg.sender) {
+        StakePosition storage position = stakes[msg.sender];
+        require(position.active, "No active stake");
+        require(block.timestamp >= position.stakedAt + position.lockDuration, "Stake still locked");
+
+        uint256 amount = position.amount;
+
+        position.active = false;
+        position.amount = 0;
+        position.lockDuration = 0;
+        position.stakedAt = 0;
+
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "Unstake transfer failed");
+
+        _refreshCachedReputation(msg.sender);
+
+        emit Unstaked(msg.sender, amount, block.timestamp);
     }
 
     // ============ Reputation Functions ============
@@ -551,6 +801,7 @@ contract OnChainResume {
         
         // Calculate credential score
         uint256 totalCredentials = userCredentials[user].length;
+        uint256 flaggedCount = 0;
         if (totalCredentials > 0) {
             // Base score for all credentials
             score += totalCredentials * SCORE_UNVERIFIED_CREDENTIAL;
@@ -558,6 +809,9 @@ contract OnChainResume {
             // Bonus for verified credentials (2+ verifications)
             uint256 verifiedCredentials = 0;
             for (uint256 i = 0; i < totalCredentials; i++) {
+                if (userCredentials[user][i].flagged) {
+                    flaggedCount++;
+                }
                 if (userCredentials[user][i].verified) {
                     verifiedCredentials++;
                 }
@@ -576,6 +830,27 @@ contract OnChainResume {
             if (monthsActive > 0) {
                 score += monthsActive * SCORE_PROFILE_UPDATE;
             }
+        }
+
+        // Activity streak bonus (capped)
+        uint256 streakBonus = 0;
+        if (profile.activityStreak > 1) {
+            streakBonus = (profile.activityStreak - 1) * STREAK_BONUS;
+        }
+        if (streakBonus > STREAK_BONUS_CAP * STREAK_BONUS) {
+            streakBonus = STREAK_BONUS_CAP * STREAK_BONUS;
+        }
+        score += streakBonus;
+
+        // Staking boost (time-locked)
+        score += _stakeBoost(user);
+
+        // Apply flagged credential penalties in a saturating way
+        uint256 penalty = flaggedCount * FLAGGED_CREDENTIAL_PENALTY;
+        if (penalty > score) {
+            score = 0;
+        } else {
+            score -= penalty;
         }
         
         return score;
@@ -599,6 +874,9 @@ contract OnChainResume {
                 verifiedCredentialBonus: 0,
                 achievementScore: 0,
                 activityScore: 0,
+                stakeBoost: 0,
+                streakBonus: 0,
+                flagPenalty: 0,
                 totalScore: 0,
                 credentialCount: 0,
                 verifiedCredentialCount: 0,
@@ -615,7 +893,11 @@ contract OnChainResume {
         uint256 credentialScore = totalCredentials * SCORE_UNVERIFIED_CREDENTIAL;
         
         uint256 verifiedCredentials = 0;
+        uint256 flaggedCredentials = 0;
         for (uint256 i = 0; i < totalCredentials; i++) {
+            if (userCredentials[user][i].flagged) {
+                flaggedCredentials++;
+            }
             if (userCredentials[user][i].verified) {
                 verifiedCredentials++;
             }
@@ -634,9 +916,27 @@ contract OnChainResume {
                 activityScore = monthsActive * SCORE_PROFILE_UPDATE;
             }
         }
+
+        uint256 streakBonus = 0;
+        if (profile.activityStreak > 1) {
+            streakBonus = (profile.activityStreak - 1) * STREAK_BONUS;
+        }
+        if (streakBonus > STREAK_BONUS_CAP * STREAK_BONUS) {
+            streakBonus = STREAK_BONUS_CAP * STREAK_BONUS;
+        }
+
+        uint256 stakeBoost = _stakeBoost(user);
+
+        uint256 flagPenalty = flaggedCredentials * FLAGGED_CREDENTIAL_PENALTY;
         
         uint256 totalScore = baseScore + verifiedProfileBonus + credentialScore + 
-                            verifiedCredentialBonus + achievementScore + activityScore;
+                            verifiedCredentialBonus + achievementScore + activityScore +
+                            streakBonus + stakeBoost;
+        if (flagPenalty > totalScore) {
+            totalScore = 0;
+        } else {
+            totalScore -= flagPenalty;
+        }
         
         return ReputationBreakdown({
             baseScore: baseScore,
@@ -645,6 +945,9 @@ contract OnChainResume {
             verifiedCredentialBonus: verifiedCredentialBonus,
             achievementScore: achievementScore,
             activityScore: activityScore,
+            stakeBoost: stakeBoost,
+            streakBonus: streakBonus,
+            flagPenalty: flagPenalty,
             totalScore: totalScore,
             credentialCount: totalCredentials,
             verifiedCredentialCount: verifiedCredentials,
@@ -696,6 +999,7 @@ contract OnChainResume {
     /// @custom:gas 1 storage write
     function verifyProfile(address _user) external onlyOwner profileExists(_user) {
         profiles[_user].verified = true;
+        _refreshCachedReputation(_user);
     }
 
     // ============ View Functions ============
@@ -741,8 +1045,10 @@ contract OnChainResume {
                     }
                 }
                 
-                if (!alreadyIncluded && profiles[allUsers[j]].reputationScore > maxScore) {
-                    maxScore = profiles[allUsers[j]].reputationScore;
+                uint256 userScore = _calculateReputation(allUsers[j]);
+                
+                if (!alreadyIncluded && userScore > maxScore) {
+                    maxScore = userScore;
                     maxIndex = j;
                 }
             }
@@ -753,6 +1059,26 @@ contract OnChainResume {
     }
 
     // ============ Admin Functions ============
+
+    /// @notice Flag or clear a credential; flagged credentials incur reputation penalties
+    /// @dev Only contract owner can flag credentials
+    /// @param _user Owner of the credential
+    /// @param _credentialIndex Index of the credential to flag/clear
+    /// @param _flagged True to flag, false to clear
+    function flagCredential(
+        address _user,
+        uint256 _credentialIndex,
+        bool _flagged
+    ) external onlyOwner profileExists(_user) {
+        require(_credentialIndex < userCredentials[_user].length, "Credential not found");
+
+        Credential storage cred = userCredentials[_user][_credentialIndex];
+        cred.flagged = _flagged;
+
+        _refreshCachedReputation(_user);
+
+        emit CredentialFlagged(_user, _credentialIndex, _flagged, block.timestamp);
+    }
 
     /// @notice Transfer contract ownership to a new address
     /// @dev New owner will have access to admin-only functions

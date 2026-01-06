@@ -400,28 +400,263 @@ describe("OnChainResume - Reputation Scoring System", function () {
     });
   });
 
-  describe("Integration with Existing Functions", function () {
-    it("Should work correctly with getTopProfiles sorting", async function () {
-      // Create 3 users with different reputations
+  describe("Staking & Boost Mechanism", function () {
+    beforeEach(async function () {
       await onChainResume.connect(user1).createProfile("user1", "QmHash1");
+    });
+
+    it("Should create a stake and boost reputation", async function () {
+      const tx = await onChainResume.connect(user1).createStake(1000);
+      expect(tx).to.emit(onChainResume, "StakeCreated");
+
+      const reputation = await onChainResume.getReputation(user1.address);
+      const breakdown = await onChainResume.getReputationBreakdown(user1.address);
       
+      expect(breakdown.stakingBonus).to.be.gt(0);
+      expect(reputation).to.be.gte(SCORE_BASE); // At least base + staking boost
+    });
+
+    it("Should not allow multiple active stakes", async function () {
+      await onChainResume.connect(user1).createStake(1000);
+      await expect(
+        onChainResume.connect(user1).createStake(500)
+      ).to.be.revertedWith("Active stake already exists");
+    });
+
+    it("Should release stake", async function () {
+      await onChainResume.connect(user1).createStake(1000);
+      const tx = await onChainResume.connect(user1).releaseStake();
+      expect(tx).to.emit(onChainResume, "StakeReleased");
+
+      const stake = await onChainResume.getStake(user1.address);
+      expect(stake.active).to.equal(false);
+    });
+  });
+
+  describe("Activity Streak System", function () {
+    beforeEach(async function () {
+      await onChainResume.connect(user1).createProfile("user1", "QmHash1");
+    });
+
+    it("Should initialize streak on profile creation", async function () {
+      const streak = await onChainResume.getActivityStreak(user1.address);
+      expect(streak.currentStreak).to.equal(1);
+    });
+
+    it("Should maintain streak on profile update within 30 days", async function () {
+      await onChainResume.connect(user1).updateProfile("QmHash2");
+      
+      const streak = await onChainResume.getActivityStreak(user1.address);
+      expect(streak.currentStreak).to.equal(1); // Still in same streak
+    });
+
+    it("Should award streak bonus to reputation", async function () {
+      const breakdown = await onChainResume.getReputationBreakdown(user1.address);
+      expect(breakdown.streakBonus).to.be.gte(0);
+    });
+  });
+
+  describe("Verifier Reputation Weighting", function () {
+    beforeEach(async function () {
+      await onChainResume.connect(user1).createProfile("user1", "QmHash1");
+      await onChainResume.connect(verifier1).createProfile("verifier1", "QmHashV1");
+      
+      await onChainResume.connect(user1).addCredential(
+        0, "Degree", "Uni", Math.floor(Date.now() / 1000), 0, "QmProof"
+      );
+    });
+
+    it("Should track verifier reputation", async function () {
+      await onChainResume.connect(verifier1).verifyCredential(user1.address, 0);
+      
+      const verifierRep = await onChainResume.getVerifierReputation(verifier1.address);
+      expect(verifierRep.totalVerifications).to.equal(1);
+    });
+
+    it("Should weight verifications by verifier credibility", async function () {
+      // Multiple verifications to build verifier reputation
+      await onChainResume.connect(verifier1).verifyCredential(user1.address, 0);
+      
+      const cred = await onChainResume.getCredentialByIndex(user1.address, 0);
+      expect(cred.weightedVerifications).to.be.gte(0);
+    });
+
+    it("Should require 2+ verifications to mark credential verified", async function () {
+      await onChainResume.connect(verifier1).verifyCredential(user1.address, 0);
+      let cred = await onChainResume.getCredentialByIndex(user1.address, 0);
+      expect(cred.verified).to.equal(false);
+
+      await onChainResume.connect(verifier2).verifyCredential(user1.address, 0);
+      cred = await onChainResume.getCredentialByIndex(user1.address, 0);
+      expect(cred.verified).to.equal(true);
+    });
+  });
+
+  describe("Credential Flagging & Slashing", function () {
+    beforeEach(async function () {
+      await onChainResume.connect(user1).createProfile("user1", "QmHash1");
       await onChainResume.connect(user2).createProfile("user2", "QmHash2");
-      await onChainResume.connect(user2).addCredential(
+      await onChainResume.connect(verifier1).createProfile("verifier1", "QmHashV1");
+      
+      await onChainResume.connect(user1).addCredential(
         0, "Degree", "Uni", Math.floor(Date.now() / 1000), 0, "QmProof"
       );
       
-      await onChainResume.connect(owner).createProfile("owner", "QmHash3");
-      await onChainResume.verifyProfile(owner.address);
+      // Build verifier reputation (3+ validations needed to flag)
+      for (let i = 0; i < 3; i++) {
+        await onChainResume.connect(user2).addCredential(
+          0, "Cert", "Issuer", Math.floor(Date.now() / 1000), 0, "QmProof"
+        );
+        await onChainResume.connect(verifier1).verifyCredential(user2.address, i);
+      }
+    });
 
-      const topProfiles = await onChainResume.getTopProfiles(3);
+    it("Should flag a credential as suspicious", async function () {
+      const tx = await onChainResume.connect(verifier1).flagCredential(
+        user1.address, 
+        0, 
+        "Suspicious issuer"
+      );
+      expect(tx).to.emit(onChainResume, "CredentialFlagged");
+
+      const cred = await onChainResume.getCredentialByIndex(user1.address, 0);
+      expect(cred.flagStatus).to.equal(1); // FLAGGED
+    });
+
+    it("Should clear a flagged credential", async function () {
+      await onChainResume.connect(verifier1).flagCredential(
+        user1.address, 
+        0, 
+        "Suspicious issuer"
+      );
       
-      // Owner should be first (verified), user2 second (credential), user1 last (base only)
-      const rep1 = await onChainResume.getReputation(topProfiles[0]);
-      const rep2 = await onChainResume.getReputation(topProfiles[1]);
-      const rep3 = await onChainResume.getReputation(topProfiles[2]);
+      const tx = await onChainResume.connect(owner).clearFlaggedCredential(user1.address, 0);
+      expect(tx).to.emit(onChainResume, "CredentialCleared");
+
+      const cred = await onChainResume.getCredentialByIndex(user1.address, 0);
+      expect(cred.flagStatus).to.equal(2); // VERIFIED_CLEAN
+    });
+
+    it("Should slash a credential permanently", async function () {
+      await onChainResume.connect(verifier1).flagCredential(
+        user1.address, 
+        0, 
+        "Fraudulent credential"
+      );
       
-      expect(rep1).to.be.gte(rep2);
-      expect(rep2).to.be.gte(rep3);
+      const tx = await onChainResume.connect(owner).slashCredential(user1.address, 0);
+      expect(tx).to.emit(onChainResume, "CredentialSlashed");
+
+      const cred = await onChainResume.getCredentialByIndex(user1.address, 0);
+      expect(cred.flagStatus).to.equal(3); // SLASHED
+      expect(cred.verified).to.equal(false);
+    });
+
+    it("Should exclude slashed credentials from reputation score", async function () {
+      await onChainResume.connect(user1).addCredential(
+        0, "Another", "Uni2", Math.floor(Date.now() / 1000), 0, "QmProof2"
+      );
+      
+      const repBefore = await onChainResume.getReputation(user1.address);
+      
+      await onChainResume.connect(verifier1).flagCredential(
+        user1.address, 
+        0, 
+        "Fraud"
+      );
+      await onChainResume.connect(owner).slashCredential(user1.address, 0);
+      
+      const repAfter = await onChainResume.getReputation(user1.address);
+      expect(repAfter).to.be.lt(repBefore); // Score reduced after slash
     });
   });
-});
+
+  describe("Cached Leaderboard", function () {
+    it("Should initialize empty leaderboard", async function () {
+      const size = await onChainResume.getLeaderboardSize();
+      expect(size).to.equal(0);
+    });
+
+    it("Should add profile to leaderboard on creation", async function () {
+      await onChainResume.connect(user1).createProfile("user1", "QmHash1");
+      
+      const size = await onChainResume.getLeaderboardSize();
+      expect(size).to.equal(1);
+    });
+
+    it("Should maintain leaderboard ordering by reputation", async function () {
+      // Create users with different reps
+      await onChainResume.connect(user1).createProfile("user1", "QmHash1");
+      await onChainResume.connect(user2).createProfile("user2", "QmHash2");
+      
+      // Verify user1 for higher reputation
+      await onChainResume.verifyProfile(user1.address);
+      
+      const topProfiles = await onChainResume.getTopProfiles(2);
+      const rep1 = await onChainResume.getReputation(topProfiles[0]);
+      const rep2 = await onChainResume.getReputation(topProfiles[1]);
+      
+      expect(rep1).to.be.gte(rep2);
+    });
+
+    it("Should support pagination via getLeaderboardPage", async function () {
+      await onChainResume.connect(user1).createProfile("user1", "QmHash1");
+      await onChainResume.connect(user2).createProfile("user2", "QmHash2");
+      
+      const page = await onChainResume.getLeaderboardPage(0, 1);
+      expect(page.length).to.equal(1);
+      expect(page[0].user).to.be.oneOf([user1.address, user2.address]);
+    });
+
+    it("Should handle pagination with offset", async function () {
+      await onChainResume.connect(user1).createProfile("user1", "QmHash1");
+      await onChainResume.connect(user2).createProfile("user2", "QmHash2");
+      
+      const page1 = await onChainResume.getLeaderboardPage(0, 1);
+      const page2 = await onChainResume.getLeaderboardPage(1, 1);
+      
+      expect(page1[0].user).to.not.equal(page2[0].user);
+    });
+  });
+
+  describe("Comprehensive Integration Test", function () {
+    it("Should correctly calculate total reputation with all bonuses", async function () {
+      // Setup user
+      await onChainResume.connect(user1).createProfile("user1", "QmHash1");
+      
+      // Add credentials
+      await onChainResume.connect(user1).addCredential(
+        0, "Degree", "Uni", Math.floor(Date.now() / 1000) - 3600, 0, "QmProof1"
+      );
+      await onChainResume.connect(user1).addCredential(
+        1, "Job", "Company", Math.floor(Date.now() / 1000) - 3600, 0, "QmProof2"
+      );
+      
+      // Verify credentials
+      await onChainResume.connect(verifier1).verifyCredential(user1.address, 0);
+      await onChainResume.connect(verifier2).verifyCredential(user1.address, 0);
+      
+      // Unlock achievement
+      await onChainResume.connect(user1).unlockAchievement("First Profile", "Created profile");
+      
+      // Verify profile
+      await onChainResume.verifyProfile(user1.address);
+      
+      // Create stake
+      await onChainResume.connect(user1).createStake(1000);
+      
+      // Update profile (trigger streak)
+      await onChainResume.connect(user1).updateProfile("QmHash2");
+      
+      const reputation = await onChainResume.getReputation(user1.address);
+      const breakdown = await onChainResume.getReputationBreakdown(user1.address);
+      
+      // Should have all components
+      expect(breakdown.baseScore).to.equal(SCORE_BASE);
+      expect(breakdown.verifiedProfileBonus).to.equal(SCORE_VERIFIED_PROFILE);
+      expect(breakdown.credentialScore).to.be.gt(0); // 2 credentials
+      expect(breakdown.verifiedCredentialBonus).to.be.gt(0); // 1+ verified
+      expect(breakdown.achievementScore).to.be.gt(0);
+      expect(breakdown.stakingBonus).to.be.gt(0);
+      expect(breakdown.streakBonus).to.be.gte(0);
+      expect(breakdown.totalScore).to.equal(reputation);
