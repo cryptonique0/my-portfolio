@@ -123,6 +123,27 @@
 - **⚡ Gas Estimator**: Predict transaction costs before executing
 - **🎯 Professional UI**: Badge metadata editor, preview modals, network warnings
 
+### Phase 5 Features ✅ LEADERBOARD ACCELERATION
+**Reputation System Overhaul** 🚀 - 10 High-Impact Features for Competitive Leaderboard Climbing
+
+**Tier 1: Engagement Mechanics**
+- **⏱️ Staking & Boosts**: Lock tokens for 15% temporary reputation boost (30-day lock)
+- **👥 Weighted Verifier Reputation**: Credible verifiers (+75% success rate) get +20% weight on verifications
+- **🔥 Activity Streaks**: Earn 5 points per month for consistent engagement; resets on 35+ day inactivity
+- **🚨 Credential Flagging & Slashing**: Anti-fraud system—verifiers flag suspicious credentials, admins slash fraudulent ones
+- **📈 Cached Leaderboard**: O(limit) pagination instead of O(n²) sorting for efficient top-100 tracking
+
+**Tier 2: Cross-Protocol & Network Effects**
+- **🎫 ERC721 Badge Verification**: Link NFT badges from Talent Protocol, Gitcoin Passport, Polygon ID (+30 pts per badge)
+- **🤝 Referral System**: 20 pts for being referred + 20 pts per successful referral made
+- **✨ Credential Freshness Bonus**: Recent credentials (within 90 days) earn +2 pts/month for staying current
+- **🏆 Seasonal Multipliers**: Top performers get 15-25% reputation boost next season
+- **📊 Enhanced Reputation Breakdown**: Detailed component tracking for all 10 vectors
+
+**Reputation Potential**: Users can now earn 300-400+ points enabling top-10 leaderboard placement in 6 months!
+
+See [LEADERBOARD_BOOST_IMPLEMENTATION.md](LEADERBOARD_BOOST_IMPLEMENTATION.md) for complete technical details.
+
 ## Tech Stack
 
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, Framer Motion
@@ -131,6 +152,7 @@
 - **Blockchain**: Base (Coinbase L2), Stacks (Bitcoin L2)
 - **Storage**: IPFS
 - **Database**: On-chain (smart contracts)
+- **Reputation Engine**: 10-vector scoring with staking, streaks, badges, referrals, and seasonal multipliers
 
 ## 🚀 Public Launch (Phase 3) - Ready for Deployment
 
@@ -141,7 +163,8 @@
 🚀 **For Developers**: Start with [BADGE_QUICK_REFERENCE.md](BADGE_QUICK_REFERENCE.md) (5-min setup)  
 📋 **For Deployment**: Follow [PHASE_3_CHECKLIST.md](PHASE_3_CHECKLIST.md) (step-by-step)  
 📚 **For Complete Docs**: Read [BADGE_SYSTEM.md](BADGE_SYSTEM.md) (600+ lines)  
-🎯 **For Integration**: See [ProfileWithBadges.tsx](src/components/ProfileWithBadges.tsx) (real examples)
+🎯 **For Integration**: See [ProfileWithBadges.tsx](src/components/ProfileWithBadges.tsx) (real examples)  
+🏆 **For Leaderboard Boost**: Read [LEADERBOARD_BOOST_IMPLEMENTATION.md](LEADERBOARD_BOOST_IMPLEMENTATION.md) (complete reference)
 
 ### What's New in Phase 3
 
