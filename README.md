@@ -165,6 +165,7 @@ See [LEADERBOARD_BOOST_IMPLEMENTATION.md](LEADERBOARD_BOOST_IMPLEMENTATION.md) f
 📚 **For Complete Docs**: Read [BADGE_SYSTEM.md](BADGE_SYSTEM.md) (600+ lines)  
 🎯 **For Integration**: See [ProfileWithBadges.tsx](src/components/ProfileWithBadges.tsx) (real examples)  
 🏆 **For Leaderboard Boost**: Read [LEADERBOARD_BOOST_IMPLEMENTATION.md](LEADERBOARD_BOOST_IMPLEMENTATION.md) (complete reference)
+⚡ **Fast Path to Top-10**: Use [LEADERBOARD_QUICKSTART.md](LEADERBOARD_QUICKSTART.md) (action plan + scripts)
 
 ### What's New in Phase 3
 
