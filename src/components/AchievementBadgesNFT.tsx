@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
 export interface AchievementBadge {
@@ -188,21 +188,22 @@ export function AchievementBadges({ badges, onMintNFT }: AchievementBadgesProps)
       </motion.div>
 
       {/* Badge Detail Modal */}
-      {selectedBadge && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/80 backdrop-blur flex items-center justify-center z-50 p-4"
-          onClick={() => setSelectedBadge(null)}
-        >
+      <AnimatePresence>
+        {selectedBadge && (
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-md w-full p-8 rounded-2xl bg-gradient-to-br from-slate-900 to-purple-900 border border-purple-500/30 shadow-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur flex items-center justify-center z-50 p-4"
+            onClick={() => setSelectedBadge(null)}
           >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-md w-full p-8 rounded-2xl bg-gradient-to-br from-slate-900 to-purple-900 border border-purple-500/30 shadow-2xl"
+            >
             {/* Close Button */}
             <button
               onClick={() => setSelectedBadge(null)}
@@ -288,9 +289,10 @@ export function AchievementBadges({ badges, onMintNFT }: AchievementBadgesProps)
                 View on OpenSea →
               </a>
             )}
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   );
 }

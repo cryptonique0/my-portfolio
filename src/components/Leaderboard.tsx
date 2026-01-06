@@ -49,17 +49,22 @@ export function Leaderboard({ limit = 50, showPagination = true, showCurrentUser
         if (!response.ok) throw new Error('Failed to fetch leaderboard');
         
         const data = await response.json();
-        setEntries(data);
+        
+        // Ensure data is an array
+        const leaderboardData = Array.isArray(data) ? data : data.entries || data.data || [];
+        
+        setEntries(leaderboardData);
 
         // Find current user in leaderboard
         if (address && showCurrentUserRank) {
-          const currentUserEntry = data.find(
+          const currentUserEntry = leaderboardData.find(
             (entry: LeaderboardEntry) => entry.address.toLowerCase() === address.toLowerCase()
           );
           setUserRank(currentUserEntry || null);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load leaderboard');
+        setEntries([]); // Set empty array on error
       } finally {
         setIsLoading(false);
       }
@@ -112,9 +117,9 @@ export function Leaderboard({ limit = 50, showPagination = true, showCurrentUser
   };
 
   // Pagination
-  const totalPages = Math.ceil(entries.length / itemsPerPage);
+  const totalPages = Math.ceil((entries?.length || 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedEntries = entries.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedEntries = (entries || []).slice(startIndex, startIndex + itemsPerPage);
 
   if (isLoading) {
     return (

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { ChainSelector } from "@/components/ChainSelector";
@@ -17,19 +18,25 @@ const links = [
 export function AppHeader() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="border-b border-white/10 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center font-bold text-lg text-white">
-            CV
-          </div>
-          <div className="hidden xs:block">
-            <div className="font-semibold text-lg leading-none">On-Chain</div>
-            <div className="text-xs text-slate-400">Resume</div>
-          </div>
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0 hover:opacity-80 transition-opacity">
+          <Image
+            src="/logo-full.svg"
+            alt="On-Chain Resume Logo"
+            width={220}
+            height={56}
+            priority
+            className="h-14 w-auto"
+          />
         </Link>
 
         {/* Desktop Navigation */}
@@ -54,8 +61,12 @@ export function AppHeader() {
 
         {/* Right Section */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <ChainSelector className="hidden sm:block" />
-          <WalletConnectButton />
+          {mounted && (
+            <>
+              <ChainSelector className="hidden sm:block" />
+              <WalletConnectButton />
+            </>
+          )}
           
           {/* Mobile Menu Button */}
           <button

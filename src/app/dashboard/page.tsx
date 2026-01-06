@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { useAccount } from "wagmi";
 import { AchievementGallery, ReputationLevelDisplay, ReputationProgression } from "@/components/AchievementBadges";
-import { ChainSelector } from "@/components/ChainSelector";
-import { WalletConnectButton } from "@/components/WalletConnectButton";
 import { Leaderboard } from "@/components/Leaderboard";
 
 export default function DashboardPage() {
@@ -12,18 +10,12 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <p className="text-sm text-indigo-200">Multi-chain profile</p>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-slate-300 text-sm">
-            Connect your wallet, pick a chain, and manage your on-chain resume across Base and Stacks.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <ChainSelector />
-          <WalletConnectButton />
-        </div>
+      <div>
+        <p className="text-sm text-indigo-200">Multi-chain profile</p>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-slate-300 text-sm">
+          Connect your wallet, pick a chain, and manage your on-chain resume across Base and Stacks.
+        </p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">

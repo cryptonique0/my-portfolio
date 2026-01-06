@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 
 export interface TimelineEvent {
@@ -46,6 +46,7 @@ export function AnimatedTimeline({
 }: AnimatedTimelineProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['credential']));
+  const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null);
 
   // Group events by category if requested
   const getGroupedEvents = (): TimelineGroup[] => {
@@ -177,6 +178,7 @@ export function AnimatedTimeline({
                       event={event}
                       isHovered={hoveredId === event.id}
                       onHover={setHoveredId}
+                      onViewDetails={setSelectedEvent}
                       highlightVerified={highlightVerified}
                       itemVariants={itemVariants}
                       hoverVariants={hoverVariants}
@@ -201,6 +203,7 @@ export function AnimatedTimeline({
               event={event}
               isHovered={hoveredId === event.id}
               onHover={setHoveredId}
+              onViewDetails={setSelectedEvent}
               highlightVerified={highlightVerified}
               itemVariants={itemVariants}
               hoverVariants={hoverVariants}
@@ -208,6 +211,107 @@ export function AnimatedTimeline({
           ))}
         </motion.div>
       )}
+
+      {/* Event Details Modal */}
+      <AnimatePresence>
+        {selectedEvent && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur flex items-center justify-center z-50 p-4"
+            onClick={() => setSelectedEvent(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-w-2xl w-full p-8 rounded-2xl bg-gradient-to-br from-slate-900 to-purple-900 border border-purple-500/30 shadow-2xl max-h-[90vh] overflow-y-auto"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all"
+              >
+                ×
+              </button>
+
+              {/* Header */}
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold text-white mb-2">{selectedEvent.title}</h2>
+                <p className="text-slate-400">{selectedEvent.category || selectedEvent.type}</p>
+              </div>
+
+              {/* Content */}
+              <div className="space-y-6">
+                {/* Description */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-300 mb-2">Description</h3>
+                  <p className="text-white">{selectedEvent.description}</p>
+                </div>
+
+                {/* Date & Details */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-300 mb-2">Date</h3>
+                    <p className="text-white">{new Date(selectedEvent.date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}</p>
+                  </div>
+
+                  {selectedEvent.issuer && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-300 mb-2">Issuer</h3>
+                      <p className="text-white">{selectedEvent.issuer}</p>
+                    </div>
+                  )}
+                </div>
+
+                {selectedEvent.expiryDate && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-300 mb-2">Expiry Date</h3>
+                    <p className="text-white">{new Date(selectedEvent.expiryDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}</p>
+                  </div>
+                )}
+
+                {selectedEvent.verified && (
+                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30">
+                    <p className="text-green-300 font-semibold">✓ Verified Credential</p>
+                    {selectedEvent.verificationDate && (
+                      <p className="text-green-300/70 text-sm mt-1">
+                        Verified on {new Date(selectedEvent.verificationDate).toLocaleDateString()}
+                      </p>
+                    )}
+                    {selectedEvent.verifier && (
+                      <p className="text-green-300/70 text-sm">
+                        Verified by {selectedEvent.verifier}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {selectedEvent.proofUrl && (
+                  <a
+                    href={selectedEvent.proofUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors"
+                  >
+                    View Proof →
+                  </a>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -219,6 +323,7 @@ interface TimelineItemProps {
   event: TimelineEvent;
   isHovered: boolean;
   onHover: (id: string | null) => void;
+  onViewDetails: (event: TimelineEvent) => void;
   highlightVerified: boolean;
   itemVariants: any;
   hoverVariants: any;
@@ -228,6 +333,7 @@ function TimelineItem({
   event,
   isHovered,
   onHover,
+  onViewDetails,
   highlightVerified,
   itemVariants,
   hoverVariants
@@ -346,6 +452,13 @@ function TimelineItem({
             View Proof →
           </a>
         )}
+
+        <button
+          onClick={() => onViewDetails(event)}
+          className="inline-block mt-3 ml-3 px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold transition-colors"
+        >
+          View Details
+        </button>
       </motion.div>
     </motion.div>
   );

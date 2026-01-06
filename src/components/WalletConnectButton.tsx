@@ -43,38 +43,11 @@ export function WalletConnectButton() {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-3"
+          className="flex items-center gap-2"
         >
-          {/* Chain Badge */}
-          <div 
-            className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-              isWrongNetwork 
-                ? 'bg-amber-500/20 border-amber-500/30 text-amber-300' 
-                : 'bg-green-500/20 border-green-500/30 text-green-300'
-            }`}
-          >
-            {state.chain?.name || 'Unknown'}
-            {isWrongNetwork && ' ⚠️'}
-          </div>
-
-          {/* Switch Network Button (if wrong network) */}
-          {isWrongNetwork && (
-            <motion.button
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={actions.switchToBase}
-              disabled={state.isConnecting}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {state.isConnecting ? 'Switching...' : 'Switch to Base'}
-            </motion.button>
-          )}
-
           {/* Address Display */}
-          <div className="px-4 py-2 rounded-lg bg-white/5 border border-purple-500/30 backdrop-blur">
-            <span className="text-white font-mono text-sm">
+          <div className="px-3 py-2 rounded-lg bg-white/5 border border-purple-500/30 backdrop-blur">
+            <span className="text-white font-mono text-xs sm:text-sm">
               {state.address.slice(0, 6)}...{state.address.slice(-4)}
             </span>
           </div>
@@ -82,7 +55,7 @@ export function WalletConnectButton() {
           {/* Disconnect Button */}
           <button
             onClick={actions.disconnect}
-            className="px-4 py-2 rounded-lg border border-red-500/30 text-red-300 text-sm font-medium hover:bg-red-500/10 transition-all"
+            className="px-3 py-2 rounded-lg border border-red-500/30 text-red-300 text-xs sm:text-sm font-medium hover:bg-red-500/10 transition-all"
           >
             Disconnect
           </button>

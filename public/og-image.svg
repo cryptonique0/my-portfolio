@@ -1,0 +1,88 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark gradient background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Decorative circles -->
+  <circle cx="150" cy="150" r="120" fill="url(#accentGradient)" opacity="0.1"/>
+  <circle cx="1050" cy="500" r="150" fill="url(#accentGradient)" opacity="0.08"/>
+  
+  <!-- Left content -->
+  <g transform="translate(60, 150)">
+    <!-- Icon circle -->
+    <circle cx="80" cy="80" r="70" fill="url(#accentGradient)" filter="url(#glow)"/>
+    
+    <!-- Document icon inside -->
+    <g transform="translate(45, 45)">
+      <rect x="0" y="0" width="70" height="90" rx="4" fill="white" opacity="0.95"/>
+      <line x1="10" y1="15" x2="60" y2="15" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+      <line x1="10" y1="30" x2="60" y2="30" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+      <line x1="10" y1="45" x2="45" y2="45" stroke="#06b6d4" stroke-width="3" stroke-linecap="round"/>
+      <path d="M 15 65 L 25 78 L 55 45" stroke="white" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+  </g>
+  
+  <!-- Main text -->
+  <g transform="translate(350, 180)">
+    <!-- Title -->
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="white" letter-spacing="-1">
+      On-Chain Resume
+    </text>
+    
+    <!-- Subtitle -->
+    <text x="0" y="80" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="500" fill="#06b6d4">
+      Verifiable Credentials on Base & Stacks
+    </text>
+    
+    <!-- Description -->
+    <text x="0" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="400" fill="#cbd5e1">
+      Build your Web3 reputation with NFT badges and on-chain credentials
+    </text>
+  </g>
+  
+  <!-- Bottom features -->
+  <g transform="translate(350, 400)">
+    <!-- Feature 1 -->
+    <g transform="translate(0, 0)">
+      <circle cx="20" cy="20" r="15" fill="url(#accentGradient)"/>
+      <text x="50" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="white">
+        Decentralized Profiles
+      </text>
+    </g>
+    
+    <!-- Feature 2 -->
+    <g transform="translate(400, 0)">
+      <circle cx="20" cy="20" r="15" fill="url(#accentGradient)"/>
+      <text x="50" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="white">
+        NFT Achievements
+      </text>
+    </g>
+    
+    <!-- Feature 3 -->
+    <g transform="translate(750, 0)">
+      <circle cx="20" cy="20" r="15" fill="url(#accentGradient)"/>
+      <text x="50" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="white">
+        Multi-Chain
+      </text>
+    </g>
+  </g>
+</svg>

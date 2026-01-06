@@ -1,0 +1,42 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient Definitions -->
+  <defs>
+    <linearGradient id="butterflyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ec4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f43f5e;stop-opacity:1" />
+    </linearGradient>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="60" cy="60" r="55" fill="url(#butterflyGradient)" opacity="0.15" stroke="url(#butterflyGradient)" stroke-width="1.5"/>
+  
+  <!-- Main Icon Circle -->
+  <circle cx="60" cy="60" r="45" fill="url(#butterflyGradient)" filter="url(#softGlow)"/>
+  
+  <!-- Butterfly -->
+  <g transform="translate(30, 25)">
+    <!-- Body -->
+    <rect x="22" y="0" width="3" height="50" rx="1.5" fill="white" opacity="0.9"/>
+    
+    <!-- Left wings -->
+    <path d="M 22 15 Q 10 10 8 25 Q 10 35 22 32" fill="white" opacity="0.85"/>
+    <path d="M 22 40 Q 5 40 2 55 Q 5 60 22 50" fill="white" opacity="0.8"/>
+    
+    <!-- Right wings -->
+    <path d="M 25 15 Q 37 10 39 25 Q 37 35 25 32" fill="white" opacity="0.85"/>
+    <path d="M 25 40 Q 42 40 45 55 Q 42 60 25 50" fill="white" opacity="0.8"/>
+    
+    <!-- Wing spots -->
+    <circle cx="15" cy="22" r="2" fill="#ec4899" opacity="0.6"/>
+    <circle cx="32" cy="22" r="2" fill="#ec4899" opacity="0.6"/>
+    <circle cx="12" cy="50" r="2" fill="#f43f5e" opacity="0.6"/>
+    <circle cx="35" cy="50" r="2" fill="#f43f5e" opacity="0.6"/>
+  </g>
+</svg>

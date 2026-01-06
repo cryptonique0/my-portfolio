@@ -8,11 +8,29 @@ export const metadata: Metadata = {
   description: "Create, verify, and showcase your on-chain resume across Base and Stacks.",
   authors: [{ name: "Talent Resume Team" }],
   keywords: ["Web3", "Resume", "Credentials", "Blockchain", "Base", "Stacks"],
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
   openGraph: {
     type: "website",
     url: "https://talent-resume.app",
     title: "On-Chain Resume | Base + Stacks",
     description: "Create, verify, and showcase your on-chain resume across Base and Stacks.",
+    images: [
+      {
+        url: "/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "On-Chain Resume - Verifiable Credentials",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "On-Chain Resume | Base + Stacks",
+    description: "Verifiable credentials and NFT achievements for Web3 professionals",
+    images: ["/og-image.svg"],
   },
 };
 

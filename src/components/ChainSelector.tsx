@@ -5,7 +5,7 @@
 
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useChainId } from 'wagmi';
 import { useChainDetection, getNetworksByType, getAllNetworks } from '@/lib/chain-utils';
 import { ChainType, NETWORKS } from '@/lib/web3-config';
@@ -20,8 +20,25 @@ export function ChainSelector({ onChainChange, className = '' }: ChainSelectorPr
   const { currentChain, isEvmChain, isStacksChain, switchToChain } = useChainDetection();
   const { switchStacksNetwork } = useStacksChain();
   const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const allNetworks = getAllNetworks();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showDropdown]);
 
   const handleChainSelect = useCallback(
     async (chainId: number | string, chainName: string) => {
@@ -47,13 +64,13 @@ export function ChainSelector({ onChainChange, className = '' }: ChainSelectorPr
   const currentChainIcon = getChainIcon(currentChain?.id?.toString());
 
   return (
-    <div className={`relative inline-block ${className}`}>
+    <div ref={dropdownRef} className={`relative inline-block ${className}`}>
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-purple-500/30 rounded-lg hover:bg-white/10 hover:border-purple-500/50 transition-all text-white text-sm font-medium"
       >
         <span className="text-lg">{currentChainIcon}</span>
-        <span className="font-medium text-sm">{currentChainName}</span>
+        <span className="hidden sm:inline">{currentChainName}</span>
         <svg
           className={`w-4 h-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`}
           fill="none"
@@ -65,11 +82,11 @@ export function ChainSelector({ onChainChange, className = '' }: ChainSelectorPr
       </button>
 
       {showDropdown && (
-        <div className="absolute top-full left-0 mt-2 w-56 bg-white border border-gray-300 rounded-lg shadow-lg z-50">
+        <div className="absolute top-full right-0 mt-2 w-56 bg-slate-800 border border-purple-500/30 rounded-lg shadow-lg z-50">
           <div className="p-2">
             {/* EVM Networks Group */}
             <div className="mb-4">
-              <div className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide">
                 EVM Networks
               </div>
               {getNetworksByType(ChainType.EVM).map((network) => (
@@ -78,15 +95,15 @@ export function ChainSelector({ onChainChange, className = '' }: ChainSelectorPr
                   onClick={() => handleChainSelect(network.id, network.name)}
                   className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     currentChain?.id === network.id
-                      ? 'bg-blue-100 text-blue-900'
-                      : 'hover:bg-gray-100 text-gray-700'
+                      ? 'bg-blue-500/30 border border-blue-500/50 text-blue-300'
+                      : 'hover:bg-white/10 text-slate-300'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <span>{getChainIcon(network.id.toString())}</span>
                     <div>
                       <div>{network.name}</div>
-                      <div className="text-xs text-gray-500">ID: {network.id}</div>
+                      <div className="text-xs text-slate-500">ID: {network.id}</div>
                     </div>
                   </div>
                 </button>
@@ -94,8 +111,8 @@ export function ChainSelector({ onChainChange, className = '' }: ChainSelectorPr
             </div>
 
             {/* Stacks Networks Group */}
-            <div className="border-t border-gray-200 pt-2">
-              <div className="px-3 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+            <div className="border-t border-slate-700 pt-2">
+              <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide">
                 Bitcoin L2
               </div>
               {getNetworksByType(ChainType.STACKS).map((network) => (
@@ -104,15 +121,15 @@ export function ChainSelector({ onChainChange, className = '' }: ChainSelectorPr
                   onClick={() => handleChainSelect(network.id, network.name)}
                   className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     currentChain?.id === network.id
-                      ? 'bg-purple-100 text-purple-900'
-                      : 'hover:bg-gray-100 text-gray-700'
+                      ? 'bg-purple-500/30 border border-purple-500/50 text-purple-300'
+                      : 'hover:bg-white/10 text-slate-300'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <span>{getChainIcon(network.id.toString())}</span>
                     <div>
                       <div>{network.name}</div>
-                      <div className="text-xs text-gray-500">STX</div>
+                      <div className="text-xs text-slate-500">STX</div>
                     </div>
                   </div>
                 </button>

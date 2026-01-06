@@ -27,15 +27,17 @@ export function ResumeUploadForm() {
   const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
 
-  const [jsonText, setJsonText] = useState(`{
-  "address": "${address ?? ""}",
-  "name": "",
-  "bio": "",
-  "skills": [],
-  "experience": [],
-  "education": [],
-  "projects": []
-}`);
+  const [jsonText, setJsonText] = useState(() => 
+    JSON.stringify({
+      address: address ?? "",
+      name: "",
+      bio: "",
+      skills: [],
+      experience: [],
+      education: [],
+      projects: []
+    }, null, 2)
+  );
   const [provider, setProvider] = useState<ProviderOption>("pinata");
   const [status, setStatus] = useState<string>("");
   const [ipfsHash, setIpfsHash] = useState<string>("");

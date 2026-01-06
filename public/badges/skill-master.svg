@@ -1,0 +1,37 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient Definitions -->
+  <defs>
+    <linearGradient id="skillGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0284c7;stop-opacity:1" />
+    </linearGradient>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="60" cy="60" r="55" fill="url(#skillGradient)" opacity="0.15" stroke="url(#skillGradient)" stroke-width="1.5"/>
+  
+  <!-- Main Icon Circle -->
+  <circle cx="60" cy="60" r="45" fill="url(#skillGradient)" filter="url(#softGlow)"/>
+  
+  <!-- Bullseye/Target -->
+  <g transform="translate(35, 35)">
+    <!-- Outer ring -->
+    <circle cx="25" cy="25" r="24" fill="none" stroke="white" stroke-width="2" opacity="0.7"/>
+    
+    <!-- Middle ring -->
+    <circle cx="25" cy="25" r="16" fill="none" stroke="white" stroke-width="2" opacity="0.8"/>
+    
+    <!-- Inner circle -->
+    <circle cx="25" cy="25" r="8" fill="white" opacity="0.95"/>
+    
+    <!-- Center dot -->
+    <circle cx="25" cy="25" r="3" fill="#0284c7"/>
+  </g>
+</svg>
