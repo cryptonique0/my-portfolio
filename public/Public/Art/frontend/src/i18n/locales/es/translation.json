@@ -1,0 +1,75 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar"
+  },
+  "nav": {
+    "home": "Inicio",
+    "discover": "Descubrir",
+    "marketplace": "Mercado",
+    "create": "Crear",
+    "studio": "Estudio",
+    "profile": "Perfil"
+  },
+  "nft": {
+    "title": "NFT",
+    "name": "Nombre",
+    "description": "Descripción",
+    "price": "Precio",
+    "owner": "Propietario",
+    "creator": "Creador",
+    "listed": "En venta",
+    "notListed": "No en venta",
+    "buy": "Comprar ahora",
+    "sell": "Vender",
+    "transfer": "Transferir",
+    "properties": "Propiedades",
+    "history": "Historial",
+    "details": "Detalles"
+  },
+  "marketplace": {
+    "title": "Mercado",
+    "featured": "Destacado",
+    "trending": "Tendencia",
+    "new": "Nuevo",
+    "topSellers": "Mejores vendedores",
+    "collections": "Colecciones",
+    "volume": "Volumen",
+    "floor": "Precio mínimo",
+    "sales": "Ventas",
+    "items": "Artículos"
+  },
+  "wallet": {
+    "connect": "Conectar billetera",
+    "disconnect": "Desconectar",
+    "balance": "Saldo",
+    "network": "Red",
+    "wrongNetwork": "Red incorrecta",
+    "switchNetwork": "Cambiar red",
+    "notConnected": "Billetera no conectada"
+  },
+  "transaction": {
+    "pending": "Transacción pendiente",
+    "confirmed": "Transacción confirmada",
+    "failed": "Transacción fallida",
+    "view": "Ver transacción",
+    "sign": "Firmar transacción"
+  },
+  "errors": {
+    "generic": "Algo salió mal",
+    "network": "Error de red",
+    "notFound": "No encontrado",
+    "unauthorized": "No autorizado",
+    "validation": "Error de validación"
+  }
+}
