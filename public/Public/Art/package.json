@@ -1,0 +1,52 @@
+{
+<<<<<<< HEAD
+  "name": "bitart-market",
+  "version": "1.0.0",
+  "description": "NFT Marketplace on Stacks Blockchain",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "build": "npm run build --workspace backend && npm run build --workspace frontend",
+    "test": "npm run test --workspace backend && npm run test --workspace frontend",
+    "e2e:test": "playwright test",
+    "e2e:report": "playwright show-report",
+    "deploy-contracts": "cd contracts && npm run deploy",
+    "lint": "npm run lint --workspace backend && npm run lint --workspace frontend",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "husky install"
+  },
+  "keywords": [
+    "nft",
+    "marketplace",
+    "stacks",
+    "blockchain",
+    "clarity"
+  ],
+  "author": "BitArt Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
+    "concurrently": "^7.6.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.1"
+  },
+  "dependencies": {}
+=======
+  "dependencies": {
+    "@prisma/client": "^7.2.0",
+    "prisma": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6"
+  }
+>>>>>>> 2caf294 (Initial commit with API documentation and features)
+}
