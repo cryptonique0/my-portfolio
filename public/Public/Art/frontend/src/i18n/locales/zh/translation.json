@@ -1,0 +1,75 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "confirm": "确认",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "search": "搜索",
+    "filter": "筛选",
+    "sort": "排序"
+  },
+  "nav": {
+    "home": "首页",
+    "discover": "发现",
+    "marketplace": "市场",
+    "create": "创建",
+    "studio": "工作室",
+    "profile": "个人资料"
+  },
+  "nft": {
+    "title": "NFT",
+    "name": "名称",
+    "description": "描述",
+    "price": "价格",
+    "owner": "所有者",
+    "creator": "创作者",
+    "listed": "上架中",
+    "notListed": "未上架",
+    "buy": "立即购买",
+    "sell": "出售",
+    "transfer": "转移",
+    "properties": "属性",
+    "history": "历史",
+    "details": "详情"
+  },
+  "marketplace": {
+    "title": "市场",
+    "featured": "精选",
+    "trending": "热门",
+    "new": "最新",
+    "topSellers": "热门卖家",
+    "collections": "合集",
+    "volume": "交易量",
+    "floor": "地板价",
+    "sales": "销售",
+    "items": "物品"
+  },
+  "wallet": {
+    "connect": "连接钱包",
+    "disconnect": "断开连接",
+    "balance": "余额",
+    "network": "网络",
+    "wrongNetwork": "错误的网络",
+    "switchNetwork": "切换网络",
+    "notConnected": "钱包未连接"
+  },
+  "transaction": {
+    "pending": "交易待处理",
+    "confirmed": "交易已确认",
+    "failed": "交易失败",
+    "view": "查看交易",
+    "sign": "签署交易"
+  },
+  "errors": {
+    "generic": "出现错误",
+    "network": "网络错误",
+    "notFound": "未找到",
+    "unauthorized": "未授权",
+    "validation": "验证错误"
+  }
+}
