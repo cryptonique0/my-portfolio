@@ -1,0 +1,170 @@
+;; Validation Utilities
+;; Common validation functions for the AirStack system
+
+;; Constants
+(define-constant err-invalid-principal (err u300))
+(define-constant err-invalid-range (err u301))
+(define-constant err-invalid-list (err u302))
+(define-constant err-zero-address (err u303))
+
+;; Validation Functions
+(define-read-only (is-valid-principal (addr principal))
+  (not (is-eq addr 'SP000000000000000000002Q6VF78))
+)
+
+(define-read-only (is-valid-amount (amount uint) (min uint) (max uint))
+  (and
+    (>= amount min)
+    (<= amount max)
+    (> amount u0)
+  )
+)
+
+(define-read-only (is-valid-block-height (height uint))
+  (>= height block-height)
+)
+
+(define-read-only (is-non-empty-list (len uint))
+  (> len u0)
+)
+
+(define-read-only (is-valid-block-range (start uint) (end uint) (min-duration uint))
+  (and
+    (< start end)
+    (>= start block-height)
+    (>= (- end start) min-duration)
+  )
+)
+
+(define-read-only (is-percentage-valid (percentage uint))
+  (and
+    (>= percentage u0)
+    (<= percentage u100)
+  )
+)
+
+;; Claim Scheduler Contract
+;; Allows scheduling claims for specific blocks/times
+
+;; Constants
+(define-constant contract-owner tx-sender)
+(define-constant err-owner-only (err u500))
+(define-constant err-schedule-not-found (err u501))
+(define-constant err-too-early (err u502))
+(define-constant err-too-late (err u503))
+(define-constant err-already-scheduled (err u504))
+
+;; Data Variables
+(define-data-var schedule-counter uint u0)
+
+;; Data Maps
+(define-map claim-schedules
+  { airdrop-id: uint, user: principal }
+  {
+    scheduled-block: uint,
+    window-duration: uint,
+    amount: uint,
+    claimed: bool,
+    created-at: uint
+  }
+)
+
+(define-map schedule-ids
+  uint
+  { airdrop-id: uint, user: principal }
+)
+
+;; Read-Only Functions
+(define-read-only (get-schedule (airdrop-id uint) (user principal))
+  (map-get? claim-schedules { airdrop-id: airdrop-id, user: user })
+)
+
+(define-read-only (can-claim-now (airdrop-id uint) (user principal))
+  (match (map-get? claim-schedules { airdrop-id: airdrop-id, user: user })
+    schedule
+    (and
+      (>= block-height (get scheduled-block schedule))
+      (<= block-height (+ (get scheduled-block schedule) (get window-duration schedule)))
+      (not (get claimed schedule))
+    )
+    false
+  )
+)
+
+(define-read-only (get-claim-window (airdrop-id uint) (user principal))
+  (match (map-get? claim-schedules { airdrop-id: airdrop-id, user: user })
+    schedule
+    (ok {
+      start: (get scheduled-block schedule),
+      end: (+ (get scheduled-block schedule) (get window-duration schedule)),
+      current: block-height
+    })
+    err-schedule-not-found
+  )
+)
+
+;; Public Functions
+(define-public (schedule-claim
+  (airdrop-id uint)
+  (user principal)
+  (scheduled-block uint)
+  (window-duration uint)
+  (amount uint)
+)
+  (let
+    (
+      (new-schedule-id (+ (var-get schedule-counter) u1))
+    )
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+    (asserts! (is-none (map-get? claim-schedules { airdrop-id: airdrop-id, user: user })) err-already-scheduled)
+    (asserts! (> scheduled-block block-height) err-too-early)
+    (asserts! (> window-duration u0) err-owner-only)
+    
+    (map-set claim-schedules { airdrop-id: airdrop-id, user: user }
+      {
+        scheduled-block: scheduled-block,
+        window-duration: window-duration,
+        amount: amount,
+        claimed: false,
+        created-at: block-height
+      }
+    )
+    
+    (map-set schedule-ids new-schedule-id { airdrop-id: airdrop-id, user: user })
+    (var-set schedule-counter new-schedule-id)
+    
+    (print {
+      event: "claim-scheduled",
+      airdrop-id: airdrop-id,
+      user: user,
+      scheduled-block: scheduled-block,
+      window-duration: window-duration
+    })
+    (ok new-schedule-id)
+  )
+)
+
+(define-public (claim-scheduled (airdrop-id uint))
+  (let
+    (
+      (schedule (unwrap! (map-get? claim-schedules { airdrop-id: airdrop-id, user: tx-sender }) err-schedule-not-found))
+    )
+    (asserts! (>= block-height (get scheduled-block schedule)) err-too-early)
+    (asserts! (<= block-height (+ (get scheduled-block schedule) (get window-duration schedule))) err-too-late)
+    (asserts! (not (get claimed schedule)) err-already-scheduled)
+    
+    ;; Mark as claimed
+    (map-set claim-schedules { airdrop-id: airdrop-id, user: tx-sender }
+      (merge schedule { claimed: true })
+    )
+    
+    (print {
+      event: "scheduled-claim-executed",
+      airdrop-id: airdrop-id,
+      user: tx-sender,
+      amount: (get amount schedule),
+      block-height: block-height
+    })
+    (ok (get amount schedule))
+  )
+)

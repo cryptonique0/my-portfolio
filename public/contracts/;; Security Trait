@@ -1,0 +1,181 @@
+;; Security Trait
+;; Defines security patterns for contracts
+
+(define-trait security-trait
+  (
+    ;; Check if contract is locked (reentrancy guard)
+    (is-locked () (response bool uint))
+    
+    ;; Lock contract
+    (lock () (response bool uint))
+    
+    ;; Unlock contract
+    (unlock () (response bool uint))
+  )
+)
+
+;; Partial Claims Contract
+;; Allows users to claim tokens in multiple installments
+
+;; Constants
+(define-constant contract-owner tx-sender)
+(define-constant err-owner-only (err u600))
+(define-constant err-invalid-percentage (err u601))
+(define-constant err-fully-claimed (err u602))
+(define-constant err-no-allocation (err u603))
+(define-constant err-minimum-not-met (err u604))
+
+;; Minimum claim percentage (10%)
+(define-constant min-claim-percentage u10)
+
+;; Data Maps
+(define-map partial-claim-state
+  { airdrop-id: uint, user: principal }
+  {
+    total-allocation: uint,
+    claimed-amount: uint,
+    claim-count: uint,
+    first-claim: uint,
+    last-claim: uint
+  }
+)
+
+(define-map claim-history
+  { airdrop-id: uint, user: principal, claim-number: uint }
+  {
+    amount: uint,
+    percentage: uint,
+    block-height: uint
+  }
+)
+
+;; Read-Only Functions
+(define-read-only (get-claim-state (airdrop-id uint) (user principal))
+  (map-get? partial-claim-state { airdrop-id: airdrop-id, user: user })
+)
+
+(define-read-only (get-remaining-allocation (airdrop-id uint) (user principal))
+  (match (map-get? partial-claim-state { airdrop-id: airdrop-id, user: user })
+    state (- (get total-allocation state) (get claimed-amount state))
+    u0
+  )
+)
+
+(define-read-only (get-claimed-percentage (airdrop-id uint) (user principal))
+  (match (map-get? partial-claim-state { airdrop-id: airdrop-id, user: user })
+    state
+    (if (> (get total-allocation state) u0)
+      (/ (* (get claimed-amount state) u100) (get total-allocation state))
+      u0
+    )
+    u0
+  )
+)
+
+(define-read-only (get-claim-details (airdrop-id uint) (user principal) (claim-number uint))
+  (map-get? claim-history { airdrop-id: airdrop-id, user: user, claim-number: claim-number })
+)
+
+;; Public Functions
+(define-public (initialize-allocation (airdrop-id uint) (user principal) (total-allocation uint))
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
+    (asserts! (> total-allocation u0) err-no-allocation)
+    
+    (map-set partial-claim-state { airdrop-id: airdrop-id, user: user }
+      {
+        total-allocation: total-allocation,
+        claimed-amount: u0,
+        claim-count: u0,
+        first-claim: u0,
+        last-claim: u0
+      }
+    )
+    
+    (ok true)
+  )
+)
+
+(define-public (claim-partial (airdrop-id uint) (percentage uint))
+  (let
+    (
+      (state (unwrap! (map-get? partial-claim-state { airdrop-id: airdrop-id, user: tx-sender }) err-no-allocation))
+      (remaining (- (get total-allocation state) (get claimed-amount state)))
+      (claim-amount (/ (* (get total-allocation state) percentage) u100))
+    )
+    (asserts! (>= percentage min-claim-percentage) err-minimum-not-met)
+    (asserts! (<= percentage u100) err-invalid-percentage)
+    (asserts! (> remaining u0) err-fully-claimed)
+    (asserts! (<= claim-amount remaining) err-invalid-percentage)
+    
+    ;; Update state
+    (map-set partial-claim-state { airdrop-id: airdrop-id, user: tx-sender }
+      {
+        total-allocation: (get total-allocation state),
+        claimed-amount: (+ (get claimed-amount state) claim-amount),
+        claim-count: (+ (get claim-count state) u1),
+        first-claim: (if (is-eq (get claim-count state) u0) block-height (get first-claim state)),
+        last-claim: block-height
+      }
+    )
+    
+    ;; Record claim history
+    (map-set claim-history
+      { airdrop-id: airdrop-id, user: tx-sender, claim-number: (+ (get claim-count state) u1) }
+      {
+        amount: claim-amount,
+        percentage: percentage,
+        block-height: block-height
+      }
+    )
+    
+    (print {
+      event: "partial-claim",
+      airdrop-id: airdrop-id,
+      user: tx-sender,
+      amount: claim-amount,
+      percentage: percentage,
+      remaining: (- remaining claim-amount)
+    })
+    (ok claim-amount)
+  )
+)
+
+(define-public (claim-all-remaining (airdrop-id uint))
+  (let
+    (
+      (state (unwrap! (map-get? partial-claim-state { airdrop-id: airdrop-id, user: tx-sender }) err-no-allocation))
+      (remaining (- (get total-allocation state) (get claimed-amount state)))
+    )
+    (asserts! (> remaining u0) err-fully-claimed)
+    
+    ;; Update state - claim everything
+    (map-set partial-claim-state { airdrop-id: airdrop-id, user: tx-sender }
+      {
+        total-allocation: (get total-allocation state),
+        claimed-amount: (get total-allocation state),
+        claim-count: (+ (get claim-count state) u1),
+        first-claim: (if (is-eq (get claim-count state) u0) block-height (get first-claim state)),
+        last-claim: block-height
+      }
+    )
+    
+    ;; Record final claim
+    (map-set claim-history
+      { airdrop-id: airdrop-id, user: tx-sender, claim-number: (+ (get claim-count state) u1) }
+      {
+        amount: remaining,
+        percentage: u100,
+        block-height: block-height
+      }
+    )
+    
+    (print {
+      event: "final-claim",
+      airdrop-id: airdrop-id,
+      user: tx-sender,
+      amount: remaining
+    })
+    (ok remaining)
+  )
+)

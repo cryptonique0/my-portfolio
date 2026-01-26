@@ -1,0 +1,48 @@
+{
+  "name": "new-mini-app-quickstart",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:baseSepolia": "hardhat run scripts/deploy.js --network baseSepolia",
+    "deploy:base": "hardhat run scripts/deploy.js --network base",
+    "node": "hardhat node",
+    "genkit:dev": "genkit start -- tsx --watch ./genkit.config.ts",
+    "genkit": "genkit start"
+  },
+  "dependencies": {
+    "@coinbase/onchainkit": "latest",
+    "@farcaster/miniapp-sdk": "^0.1.8",
+    "@genkit-ai/core": "^1.27.0",
+    "@genkit-ai/googleai": "^1.27.0",
+    "@google/generative-ai": "^0.24.1",
+    "@tanstack/react-query": "^5.81.5",
+    "jszip": "^3.10.1",
+    "next": "15.3.8",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "viem": "^2.31.6",
+    "wagmi": "^2.16.3",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@farcaster/quick-auth": "^0.0.7",
+    "@next/eslint-plugin-next": "^15.3.4",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@react-native-async-storage/async-storage": "^1.24.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^16.4.7",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.4",
+    "hardhat": "^2.22.0",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,85 @@
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #171717;
+    /* Default theme (Classic) */
+    --primary-bg: #1a1a2e;
+    --secondary-bg: #16213e;
+    --accent-bg: #0f3460;
+    --light-square: #f0d9b5;
+    --dark-square: #b58863;
+    --primary: #667eea;
+    --secondary: #764ba2;
+    --accent: #f093fb;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --success: #10b981;
+    --error: #ef4444;
+    --warning: #f59e0b;
+    /* RGB versions for rgba() use */
+    --primary-rgb: 102, 126, 234;
+    --secondary-rgb: 118, 75, 162;
+    --accent-rgb: 240, 147, 251;
+    --text-primary-rgb: 255, 255, 255;
+    --text-secondary-rgb: 255, 255, 255;
+    --success-rgb: 16, 185, 129;
+    --error-rgb: 239, 68, 68;
+    --warning-rgb: 245, 158, 11;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: #0a0a0a;
+      --foreground: #ededed;
+    }
+  }
+
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  body {
+    color: var(--foreground);
+    background: var(--background);
+    font-family: var(--font-inter), sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  code {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    font-family: var(--font-source-code-pro), monospace;
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem calc(0.25rem + 2px);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    code {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  * {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    html {
+      color-scheme: dark;
+    }
+  }
+}

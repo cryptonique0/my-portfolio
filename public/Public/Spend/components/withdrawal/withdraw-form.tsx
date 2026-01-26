@@ -1,0 +1,693 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { ArrowLeft, Check, Copy, Share2, Info, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { Spinner } from "@/components/ui/spinner";
+
+import { useAccount, useSignTypedData, useChainId } from "wagmi";
+import { parseEther, formatEther, type Address } from "viem";
+import { useUserContracts, useVaultETHBalance, useVaultQuorum, useVaultNonce, useIsVaultOwner, useGetPolicyForAmount, useGetWithdrawalCaps, useVaultWithdrawnInPeriod } from "@/lib/hooks/useContracts";
+import { useGuardians } from "@/lib/hooks/useVaultData";
+import { useGuardianSignatures } from "@/lib/hooks/useGuardianSignatures";
+
+export function WithdrawalForm() {
+    const [step, setStep] = useState<'form' | 'signing' | 'success'>('form');
+    const [amount, setAmount] = useState("");
+    const [reason, setReason] = useState("");
+    const [withdrawalData, setWithdrawalData] = useState<any>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isScheduled, setIsScheduled] = useState(false);
+    const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
+    const [requestId, setRequestId] = useState<string | null>(null);
+    const [signingGuardians, setSigningGuardians] = useState<string[]>([]);
+
+    const { address, isConnected } = useAccount();
+    const chainId = useChainId();
+    const { data: userContracts } = useUserContracts(address as any);
+    const guardianTokenAddress = userContracts ? (userContracts as any)[0] : undefined;
+    const vaultAddress = userContracts ? (userContracts as any)[1] : undefined;
+    const { guardians, isLoading: guardiansLoading } = useGuardians(guardianTokenAddress || ('0x0000000000000000000000000000000000000000' as Address));
+    const guardianCount = guardians ? guardians.length : 0;
+    const { data: vaultBalance } = useVaultETHBalance(vaultAddress);
+    const { data: quorum } = useVaultQuorum(vaultAddress);
+    const { data: currentNonce } = useVaultNonce(vaultAddress);
+    const { data: isVaultOwner, isLoading: isCheckingOwnership } = useIsVaultOwner(vaultAddress, address);
+    const { createWithdrawalRequest } = useGuardianSignatures(vaultAddress);
+    
+    const { signTypedData, data: signature, isPending: isSigning, isSuccess: isSignSuccess } = useSignTypedData();
+
+    // Calculate quorum value early for use in JSX
+    const quorumValue = (quorum && typeof quorum === 'bigint') ? quorum.toString() : '2';
+
+    // Policy for the currently entered amount (for live display)
+    let parsedAmountForPolicy: bigint | undefined = undefined;
+    try {
+        parsedAmountForPolicy = amount ? parseEther(amount) as bigint : undefined;
+    } catch (e) {
+        parsedAmountForPolicy = undefined;
+    }
+
+    const policyRes = useGetPolicyForAmount(vaultAddress || ('0x0000000000000000000000000000000000000000' as Address), parsedAmountForPolicy as any);
+    const policyApprovals = policyRes && policyRes.data ? String(policyRes.data.requiredApprovals ?? quorumValue) : quorumValue;
+    let policyRequiredApprovals = Number(quorumValue);
+    if (policyRes && policyRes.data && policyRes.data.requiredApprovals !== undefined) {
+        try {
+            policyRequiredApprovals = Number(policyRes.data.requiredApprovals);
+        } catch (e) {
+            policyRequiredApprovals = Number(quorumValue);
+        }
+    }
+
+    // Handle successful signature
+    useEffect(() => {
+        if (isSignSuccess && signature && withdrawalData && requestId && vaultAddress && address) {
+            // Save withdrawal request to database with owner's signature and update status
+            const saveRequest = async () => {
+                try {
+                    // Update the pending request with the owner's signature and update status
+                    const updateRes = await fetch(`/api/guardian-signatures/${requestId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            signatures: [{
+                                request: withdrawalData,
+                                signer: address,
+                                signature,
+                                signedAt: Date.now(),
+                            }],
+                            guardians: guardians?.map((g: any) => typeof g === 'string' ? g : g?.address) || [],
+                            status: 'pending-approval', // Update status after owner signs - now waiting for guardians
+                        }),
+                    });
+                    
+                    if (!updateRes.ok) {
+                        const errorData = await updateRes.json().catch(() => ({ error: 'Unknown error' }));
+                        console.error('Failed to update withdrawal request with signature:', errorData);
+                        toast.error('Failed to save signature');
+                        return;
+                    }
+                    
+                    toast.success('Signature saved! Share this with your guardians.');
+                } catch (error) {
+                    console.error('Error saving withdrawal request signature:', error);
+                    toast.error('Error saving signature');
+                    return;
+                }
+                
+                setStep('success');
+            };
+            
+            saveRequest();
+        }
+    }, [isSignSuccess, signature, withdrawalData, requestId, vaultAddress, address, guardians]);
+
+    // Client-side cap hooks (zero address = ETH)
+    const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address;
+    const capsRes = useGetWithdrawalCaps(vaultAddress || ZERO_ADDRESS, ZERO_ADDRESS);
+    const dailyUsedRes = useVaultWithdrawnInPeriod(vaultAddress || ZERO_ADDRESS, ZERO_ADDRESS, 'daily');
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!isConnected || !address || !vaultAddress) {
+            alert("Please connect your wallet first");
+            return;
+        }
+
+        if (guardiansLoading) {
+            alert("Loading guardians... Please wait");
+            return;
+        }
+
+        if (!amount || parseFloat(amount) <= 0) {
+            alert("Please enter a valid amount");
+            return;
+        }
+
+        const amountInWei = parseEther(amount);
+
+        // Check temporal caps (client-side hint)
+        try {
+            if (capsRes && (capsRes as any).data) {
+                const cap = (capsRes as any).data;
+                const capDaily = cap.daily ? BigInt(cap.daily) : 0n;
+                const used = dailyUsedRes && (dailyUsedRes as any).data ? BigInt((dailyUsedRes as any).data) : 0n;
+                if (capDaily > 0n && amountInWei + used > capDaily) {
+                    alert('This withdrawal would exceed the daily cap for the vault');
+                    return;
+                }
+            }
+        } catch (e) {
+            // ignore client-side validation errors
+        }
+        
+        // Check if user has sufficient balance
+        if (vaultBalance && typeof vaultBalance === 'bigint' && amountInWei > vaultBalance) {
+            alert("Insufficient vault balance");
+            return;
+        }
+
+        // Validate policy vs guardian count and warn if guardians are insufficient
+        if (policyRes && policyRes.data) {
+            const required = policyRes.data.requiredApprovals !== undefined ? Number(policyRes.data.requiredApprovals) : Number(quorumValue);
+            if (required > guardianCount) {
+                const proceed = confirm(`Policy requires ${required} approvals but there are only ${guardianCount} guardians. Proceed anyway?`);
+                if (!proceed) return;
+            }
+        }
+
+        // Prepare withdrawal data using the current nonce from the contract
+        const withdrawalRequest = {
+            token: '0x0000000000000000000000000000000000000000' as Address, // ETH
+            amount: amountInWei,
+            recipient: address,
+            nonce: (typeof currentNonce === 'bigint' ? currentNonce : 0n), // Use contract nonce
+            reason: reason || "Withdrawal request"
+        };
+
+        setWithdrawalData(withdrawalRequest);
+        
+        // Create the pending withdrawal request in the database
+        try {
+            console.log('[WithdrawalForm] Starting withdrawal creation...');
+            toast.loading('Creating withdrawal request...', { id: 'withdrawal-creation' });
+            
+            const timestamp = Date.now();
+            
+            // Get guardians list - ensure it's loaded
+            let guardiansList = guardians || [];
+            if (guardiansLoading) {
+                console.warn('[WithdrawalForm] Guardians still loading');
+                alert('Guardians are still loading. Please wait a moment and try again.');
+                return;
+            }
+            
+            if (guardiansList.length === 0) {
+                console.warn('[WithdrawalForm] No guardians available');
+                alert('No guardians found for this vault. Cannot create withdrawal.');
+                return;
+            }
+            
+            console.log('[WithdrawalForm] Creating withdrawal with', guardiansList.length, 'guardians:', guardiansList);
+            
+            // Ensure nonce is converted to string for the ID
+            const nonceStr = typeof currentNonce === 'bigint' ? currentNonce.toString() : String(currentNonce);
+            const newRequestId = `${vaultAddress}-${nonceStr}-${timestamp}`;
+            
+            // Convert BigInt values to strings for serialization
+            const serializedRequest = {
+                token: withdrawalRequest.token,
+                amount: withdrawalRequest.amount.toString(),
+                recipient: withdrawalRequest.recipient,
+                nonce: withdrawalRequest.nonce.toString(),
+                reason: withdrawalRequest.reason,
+            };
+            
+            // Extract guardian addresses - handle both string and object formats
+            const guardianAddresses = guardiansList.map((g: any) => {
+                if (typeof g === 'string') return g;
+                if (g?.address) return g.address;
+                return '';
+            }).filter((addr: string) => addr && addr !== '0x0000000000000000000000000000000000000000');
+            
+            console.log('[WithdrawalForm] Extracted guardian addresses:', guardianAddresses);
+            
+            if (guardianAddresses.length === 0) {
+                alert('No valid guardian addresses found. Cannot create withdrawal.');
+                return;
+            }
+            
+            // Create the pending request with all current guardians
+            const pendingRequest = {
+                id: newRequestId,
+                vaultAddress,
+                guardianTokenAddress: guardianTokenAddress || undefined,
+                request: serializedRequest,
+                signatures: [],
+                requiredQuorum: Number(quorumValue),
+                createdAt: timestamp,
+                createdBy: address,
+                status: 'awaiting-signature', // Initial status - waiting for owner's signature
+                guardians: guardianAddresses,
+            };
+            
+            console.log('[WithdrawalForm] Sending pending request to API:', JSON.stringify(pendingRequest, null, 2));
+            
+            const createRes = await fetch('/api/guardian-signatures', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pendingRequest),
+            });
+            
+            if (!createRes.ok) {
+                const errorData = await createRes.json().catch(() => ({ error: 'Unknown error' }));
+                console.error('API error:', errorData);
+                throw new Error(errorData.error || 'Failed to create withdrawal request');
+            }
+            
+            const createdRequest = await createRes.json();
+            console.log('[WithdrawalForm] Request created in database with response:', JSON.stringify(createdRequest, null, 2));
+            
+            if (!createdRequest.id) {
+                throw new Error('No request ID returned from API');
+            }
+            
+            toast.dismiss('withdrawal-creation');
+            toast.success('Withdrawal request created! Please sign to proceed.');
+            
+            setRequestId(createdRequest.id);
+            
+            // Set the guardians from the created request for display
+            const guardiansToDisplay = createdRequest.guardians && createdRequest.guardians.length > 0 
+                ? createdRequest.guardians 
+                : guardianAddresses;
+            
+            console.log('[WithdrawalForm] Guardians to display:', guardiansToDisplay);
+            setSigningGuardians(guardiansToDisplay);
+        } catch (error) {
+            console.error('Error creating withdrawal request:', error);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            console.error('Full error:', error);
+            toast.dismiss('withdrawal-creation');
+            toast.error(`Failed to create withdrawal: ${errorMsg}`);
+            setIsSubmitting(false);
+            return;
+        }
+        
+        // Move to signing step to get owner's signature
+        setStep('signing');
+        
+        // EIP-712 domain
+        const domain = {
+            name: 'SpendGuard',
+            version: '1',
+            chainId: chainId,
+            verifyingContract: vaultAddress as Address,
+        };
+
+        // EIP-712 types
+        const types = {
+            Withdrawal: [
+                { name: 'token', type: 'address' },
+                { name: 'amount', type: 'uint256' },
+                { name: 'recipient', type: 'address' },
+                { name: 'nonce', type: 'uint256' },
+                { name: 'reason', type: 'string' },
+            ],
+        };
+
+        // Sign the withdrawal request
+        try {
+            if (!isConnected || !address || !vaultAddress) {
+                toast.error("Please connect your wallet first");
+                return;
+            }
+            if (!amount || parseFloat(amount) <= 0) {
+                toast.error("Please enter a valid amount");
+                return;
+            }
+            const amountInWei = parseEther(amount);
+            if (vaultBalance && typeof vaultBalance === 'bigint' && amountInWei > vaultBalance) {
+                toast.error("Insufficient vault balance");
+                return;
+            }
+            if (isScheduled) {
+                if (!scheduledDate || scheduledDate.getTime() <= Date.now()) {
+                    toast.error("Please select a valid future date/time");
+                    return;
+                }
+                toast.promise(
+                  (async () => {
+                    const res = await fetch('/api/scheduled-withdrawals', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token: '0x0000000000000000000000000000000000000000',
+                            amount: amountInWei.toString(),
+                            recipient: address,
+                            reason: reason || "Scheduled withdrawal",
+                            category: "General",
+                            scheduledFor: Math.floor(scheduledDate.getTime() / 1000)
+                        })
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || 'Failed to schedule withdrawal');
+                    }
+                  })(),
+                  {
+                    loading: 'Scheduling withdrawal...',
+                    success: 'Withdrawal scheduled!',
+                    error: (err) => err?.message || 'Failed to schedule withdrawal',
+                  }
+                );
+                setStep('success');
+                setIsSubmitting(false);
+                return;
+            }
+            // ...existing immediate withdrawal logic...
+            const withdrawalRequest = {
+                token: '0x0000000000000000000000000000000000000000' as Address, // ETH
+                amount: amountInWei,
+                recipient: address,
+                nonce: (typeof currentNonce === 'bigint' ? currentNonce : 0n), // Use contract nonce
+                reason: reason || "Withdrawal request"
+            };
+            setWithdrawalData(withdrawalRequest);
+            setStep('signing');
+            // ...existing EIP-712 logic...
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Render conditional content - all hooks must be called above
+    if (!isConnected) {
+        return (
+            <div className="w-full max-w-md mx-auto">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-12 text-center">
+                    <AlertCircle size={48} className="text-slate-400 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Wallet Not Connected</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">
+                        Please connect your wallet to create a withdrawal request
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!vaultAddress) {
+        return (
+            <div className="w-full max-w-md mx-auto">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-12 text-center">
+                    <AlertCircle size={48} className="text-slate-400 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No Vault Found</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+                        You need to create a vault before making withdrawal requests
+                    </p>
+                    <Link href="/vault/setup" className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-bold">
+                        Create Vault
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    if (isCheckingOwnership) {
+        return (
+            <div className="w-full max-w-md mx-auto">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-12 text-center">
+                    <Spinner className="w-8 h-8 text-primary mx-auto mb-4" />
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">
+                        Checking vault access...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!isVaultOwner) {
+        return (
+            <div className="w-full max-w-md mx-auto">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-12 text-center">
+                    <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Unauthorized Access</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+                        Only the vault owner can create withdrawal requests. You are not the owner of this vault.
+                    </p>
+                    <Link href="/dashboard" className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-bold">
+                        Back to Dashboard
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'signing') {
+        return (
+            <div className="w-full max-w-2xl mx-auto">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-8">
+                    <div className="text-center mb-8">
+                        <Spinner className="w-16 h-16 text-primary mx-auto mb-6" />
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Sign Request</h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm">
+                            Please sign the withdrawal request in your wallet to continue
+                        </p>
+                    </div>
+
+                    {/* Signature Progress */}
+                    <div className="mb-6 p-4 bg-gray-50 dark:bg-surface-border/30 rounded-lg border border-gray-200 dark:border-surface-border">
+                        <div className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Required Signatures: 0 / {policyRequiredApprovals}</div>
+                        <div className="w-full bg-gray-200 dark:bg-surface-border rounded-full h-2">
+                            <div 
+                                className="bg-primary h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${(0 / policyRequiredApprovals) * 100}%` }}
+                            ></div>
+                        </div>
+                    </div>
+
+                    {/* Guardians List */}
+                    <div className="mb-6">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Guardians</h3>
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {signingGuardians && signingGuardians.length > 0 ? (
+                                signingGuardians.map((guardian: string, index: number) => (
+                                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface-border/20 rounded-lg border border-gray-200 dark:border-surface-border/50">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-mono text-slate-600 dark:text-slate-400 truncate">
+                                                {guardian}
+                                            </p>
+                                        </div>
+                                        <div className="text-xs text-slate-400 whitespace-nowrap">Pending</div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-sm text-slate-500 dark:text-slate-400">No guardians assigned</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={() => setStep('form')} 
+                        className="w-full text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-medium py-2"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (step === 'success') {
+        return (
+            <div className="w-full max-w-md mx-auto">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-8 text-center shadow-card animate-in fade-in zoom-in duration-300">
+                    <div className="size-20 bg-emerald-100 dark:bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-600 dark:text-emerald-500 mx-auto mb-6 shadow-glow">
+                        <Check size={40} strokeWidth={3} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Request Created</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+                        Your withdrawal request for <strong className="text-slate-900 dark:text-white">{amount} ETH</strong> has been created. Share the link with your guardians to get approval.
+                    </p>
+
+                    <div className="bg-gray-50 dark:bg-surface-border/30 rounded-lg p-3 flex items-center gap-2 mb-6 border border-gray-200 dark:border-surface-border">
+                        <span className="text-xs font-mono text-slate-500 dark:text-slate-400 truncate flex-1">spendguard.app/vote/req-8a92...</span>
+                        <button className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-surface-border text-slate-500 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                            <Copy size={16} />
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold text-sm transition-transform active:scale-95 shadow-lg shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                            WhatsApp
+                        </button>
+                        <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold text-sm transition-transform active:scale-95 shadow-lg shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                            Telegram
+                        </button>
+                    </div>
+
+                    <button onClick={() => setStep('form')} className="mt-6 text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full">
+                        Start Over
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
+    const balanceETH = (vaultBalance && typeof vaultBalance === 'bigint') ? formatEther(vaultBalance) : "0";
+    const formattedBalance = parseFloat(balanceETH).toFixed(4);
+
+    return (
+        <div className="w-full max-w-lg mx-auto">
+            <div className="flex items-center gap-3 mb-8">
+                <Link href="/dashboard" className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-surface-border text-slate-500 dark:text-slate-400 transition-colors">
+                    <ArrowLeft size={20} />
+                </Link>
+                <div>
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">New Withdrawal Request</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Initiate a withdrawal from your vault</p>
+                </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                {/* Asset Selection */}
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-4 shadow-sm">
+                    <div className="flex justify-between items-center mb-4">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Asset</label>
+                        <span className="text-xs text-slate-500">Balance: <span className="text-slate-900 dark:text-white font-medium">{formattedBalance} ETH</span></span>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface-border/30 rounded-lg border border-gray-200 dark:border-surface-border">
+                        <div className="size-8 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                            Ξ
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">ETH</p>
+                            <p className="text-xs text-slate-500">Ethereum</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Amount Input */}
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-6 shadow-sm">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Amount (ETH)</label>
+                    <div className="relative">
+                        <input
+                            type="number"
+                            step="0.0001"
+                            min="0"
+                            max={balanceETH}
+                            placeholder="0.0"
+                            className="w-full bg-transparent text-4xl font-bold text-slate-900 dark:text-white placeholder:text-slate-200 dark:placeholder:text-slate-700 outline-none"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                const newAmount = "1";
+                                if (vaultBalance && typeof vaultBalance === 'bigint' && parseEther(newAmount) > vaultBalance) {
+                                    toast.error("Insufficient vault balance");
+                                } else {
+                                    setAmount(newAmount);
+                                }
+                            }} 
+                            className="px-3 py-1 bg-gray-100 dark:bg-surface-border rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-surface-border/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                            1 ETH
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                const newAmount = "5";
+                                if (vaultBalance && typeof vaultBalance === 'bigint' && parseEther(newAmount) > vaultBalance) {
+                                    toast.error("Insufficient vault balance");
+                                } else {
+                                    setAmount(newAmount);
+                                }
+                            }} 
+                            className="px-3 py-1 bg-gray-100 dark:bg-surface-border rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-surface-border/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                            5 ETH
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                if (vaultBalance && typeof vaultBalance === 'bigint') {
+                                    setAmount(formatEther(vaultBalance));
+                                    toast.success("Set to maximum available balance");
+                                } else {
+                                    toast.error("Unable to determine vault balance");
+                                }
+                            }} 
+                            className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold hover:bg-primary/20 transition-colors ml-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                            MAX
+                        </button>
+                    </div>
+                        {/* Policy badge and guardian count */}
+                        {policyRes && policyRes.data && (
+                            <div className="mt-3 flex items-center justify-between gap-4 text-xs">
+                                <div className="px-3 py-2 bg-gray-100 dark:bg-surface-border rounded-xl border border-gray-200 dark:border-surface-border">
+                                    <div className="font-semibold">Policy</div>
+                                    <div className="mt-1 text-slate-700 dark:text-slate-300">
+                                        <div>Range: {policyRes.data.minAmount ? `${formatEther(policyRes.data.minAmount)} ETH` : '0'} - {policyRes.data.maxAmount && policyRes.data.maxAmount !== 0n ? `${formatEther(policyRes.data.maxAmount)} ETH` : '∞'}</div>
+                                        <div>Approvals: {String(policyRes.data.requiredApprovals)}</div>
+                                        <div>Cooldown: {policyRes.data.cooldown ? `${String(policyRes.data.cooldown)}s` : 'none'}</div>
+                                    </div>
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                    Guardians: <span className="font-medium text-slate-900 dark:text-white">{guardianCount}</span>
+                                    {policyRequiredApprovals > guardianCount && (
+                                        <span className="ml-2 text-amber-600">Insufficient guardians for policy</span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                </div>
+
+                {/* Reason */}
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-4 shadow-sm">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Reason (Optional)</label>
+                    <textarea
+                        className="w-full bg-transparent text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none resize-none min-h-[80px]"
+                        placeholder="Why are you withdrawing? This helps guardians decide."
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                    ></textarea>
+                </div>
+
+                {/* Scheduled Withdrawal Option */}
+                <div className="flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        id="schedule-withdrawal"
+                        checked={isScheduled}
+                        onChange={() => setIsScheduled(!isScheduled)}
+                        className="form-checkbox h-4 w-4 text-primary"
+                    />
+                    <label htmlFor="schedule-withdrawal" className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                        Schedule for future date/time
+                    </label>
+                </div>
+                {isScheduled && (
+                    <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-4 shadow-sm">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Scheduled For</label>
+                        <DatePicker
+                            selected={scheduledDate}
+                            onChange={setScheduledDate}
+                            showTimeSelect
+                            timeFormat="HH:mm"
+                            timeIntervals={15}
+                            dateFormat="MMMM d, yyyy h:mm aa"
+                            minDate={new Date()}
+                            className="w-full bg-transparent text-lg font-bold text-slate-900 dark:text-white outline-none border-b border-gray-200 dark:border-slate-700 py-2"
+                            placeholderText="Select date and time"
+                        />
+                    </div>
+                )}
+
+                <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
+                    <Info size={16} className="text-blue-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                        This withdrawal requires <strong>{quorumValue} guardian signatures</strong> to be approved and executed.
+                    </p>
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={!amount || isSubmitting || guardiansLoading}
+                    className="w-full bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all active:scale-[0.99] flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                    {guardiansLoading ? 'Loading guardians...' : (isScheduled ? 'Schedule Withdrawal' : 'Create Withdrawal Request')}
+                </button>
+            </form>
+        </div>
+    );
+}

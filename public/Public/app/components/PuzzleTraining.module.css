@@ -1,0 +1,475 @@
+.puzzleTraining {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.stats {
+  display: flex;
+  gap: 1rem;
+}
+
+.statBox {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.puzzleContainer {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.puzzleInfo {
+  margin-bottom: 2rem;
+}
+
+.boardContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.infoBadge {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.theme,
+.difficulty,
+.rating {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.theme {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary);
+}
+
+.difficulty {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+}
+
+.rating {
+  background: rgba(139, 92, 246, 0.15);
+  color: rgba(139, 92, 246, 1);
+}
+
+.instructions h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.instructions p {
+  color: var(--text-secondary);
+}
+
+.boardPlaceholder {
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 1;
+  margin: 0 auto 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.fenDisplay {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  color: white;
+  word-break: break-all;
+}
+
+.fenDisplay code {
+  font-size: 0.875rem;
+}
+
+.note {
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  font-size: 1.125rem;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.stats {
+  display: flex;
+  gap: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.moveInput {
+  display: flex;
+  gap: 1rem;
+}
+
+.input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.hintButton {
+  padding: 0.75rem 1.5rem;
+  background: var(--warning);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.hintButton:hover {
+  opacity: 0.9;
+}
+
+.feedback {
+  padding: 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.feedback.success {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.feedback.error {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.feedback.info {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.moveHistory {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.move {
+  padding: 0.25rem 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.skipButton,
+.nextButton {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+}
+
+.skipButton {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.nextButton {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+}
+
+.skipButton:hover,
+.nextButton:hover {
+  opacity: 0.9;
+}
+
+.dailyChallenge {
+  background: linear-gradient(135deg, var(--warning), var(--secondary));
+  border-radius: 16px;
+  padding: 2rem;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.challengeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.challengeHeader h2 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.timer {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.dailyChallenge p {
+  margin-bottom: 1rem;
+  font-size: 1.125rem;
+}
+
+.prizePool {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.prizePool strong {
+  font-size: 1.5rem;
+}
+
+.challengeButton {
+  width: 100%;
+  padding: 1rem;
+  background: white;
+  color: var(--warning);
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.125rem;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.challengeButton:hover {
+  transform: translateY(-2px);
+}
+
+.loading {
+  text-align: center;
+  padding: 4rem;
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+}
+
+/* Leaderboard Styles */
+.toggleButton {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggleButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.prizeInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.playerScore {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.leaderboard {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.rewardDistribution {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.rewardDistribution h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.distribution {
+  font-size: 0.875rem;
+  opacity: 0.95;
+}
+
+.rankingsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rankingsTable thead {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.rankingsTable th {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rankingsTable td {
+  padding: 1rem 0.75rem;
+  color: #1f2937;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.rankingsTable tbody tr:hover {
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.topThree {
+  background: linear-gradient(90deg, rgba(251, 191, 36, 0.1) 0%, rgba(255, 255, 255, 0) 100%) !important;
+}
+
+.playerAddress {
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.reward {
+  font-weight: 600;
+  color: #10b981;
+}
+
+.noData {
+  text-align: center;
+  padding: 2rem !important;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.leaderboardActions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.refreshButton {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--warning);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.refreshButton:hover {
+  background: white;
+  transform: translateY(-1px);
+}
+
+.note {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  text-align: center;
+  opacity: 0.9;
+}

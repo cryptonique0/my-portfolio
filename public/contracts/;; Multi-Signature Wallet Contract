@@ -1,0 +1,96 @@
+;; Multi-Signature Wallet Contract
+;; Requires multiple approvals for critical operations
+
+;; Constants
+(define-constant contract-owner tx-sender)
+(define-constant err-unauthorized (err u400))
+(define-constant err-already-approved (err u401))
+(define-constant err-not-approved (err u402))
+(define-constant err-insufficient-approvals (err u403))
+(define-constant err-tx-not-found (err u404))
+(define-constant err-tx-already-executed (err u405))
+
+;; Data Variables
+(define-data-var required-approvals uint u2)
+(define-data-var tx-counter uint u0)
+
+;; Data Maps
+(define-map signers principal bool)
+
+(define-map pending-transactions
+  uint
+  {
+    action: (string-ascii 50),
+    target: principal,
+    amount: uint,
+    executed: bool,
+    created-by: principal,
+    created-at: uint,
+    approvals: uint
+  }
+)
+
+(define-map transaction-approvals
+  { tx-id: uint, signer: principal }
+  bool
+)
+
+;; Initialize signers
+(map-set signers contract-owner true)
+
+;; Read-Only Functions
+(define-read-only (is-signer (who principal))
+  (default-to false (map-get? signers who))
+)
+
+(define-read-only (get-required-approvals)
+  (var-get required-approvals)
+)
+
+(define-read-only (get-transaction (tx-id uint))
+  (map-get? pending-transactions tx-id)
+)
+
+(define-read-only (has-approved (tx-id uint) (signer principal))
+  (default-to false (map-get? transaction-approvals { tx-id: tx-id, signer: signer }))
+)
+
+(define-read-only (get-approval-count (tx-id uint))
+  (match (map-get? pending-transactions tx-id)
+    tx (get approvals tx)
+    u0
+  )
+)
+
+;; Public Functions
+(define-public (add-signer (new-signer principal))
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-unauthorized)
+    (map-set signers new-signer true)
+    (ok true)
+  )
+)
+
+(define-public (remove-signer (old-signer principal))
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-unauthorized)
+    (asserts! (not (is-eq old-signer contract-owner)) err-unauthorized)
+    (map-set signers old-signer false)
+    (ok true)
+  )
+)
+
+(define-public (set-required-approvals (new-requirement uint))
+  (begin
+    (asserts! (is-eq tx-sender contract-owner) err-unauthorized)
+    (asserts! (> new-requirement u0) err-unauthorized)
+    (var-set required-approvals new-requirement)
+    (ok true)
+  )
+)
+
+(define-public (propose-transaction
+  (action (string-ascii 50))
+  (target principal)
+  (amount uint)
+)
