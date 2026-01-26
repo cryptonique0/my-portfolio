@@ -1,0 +1,21 @@
+[project]
+name = "airstack"
+description = "Token Airdrop System on Stacks Blockchain"
+authors = ["web3joker"]
+telemetry = false
+cache_dir = ".cache"
+requirements = []
+boot_contracts = []
+
+[repl]
+costs_version = 2
+parser_version = 2
+
+[repl.analysis]
+passes = ["check_checker"]
+
+[repl.analysis.check_checker]
+strict = false
+trusted_sender = false
+trusted_caller = false
+callee_filter = false
