@@ -1,0 +1,22 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="baseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0052FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00D4FF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="#000814"/>
+  <g opacity="0.1">
+    <rect x="50" y="50" width="300" height="300" stroke="url(#baseGrad)" stroke-width="2" fill="none"/>
+    <rect x="75" y="75" width="250" height="250" stroke="url(#baseGrad)" stroke-width="2" fill="none"/>
+    <rect x="100" y="100" width="200" height="200" stroke="url(#baseGrad)" stroke-width="2" fill="none"/>
+  </g>
+  <g>
+    <polygon points="200,80 280,140 280,220 200,280 120,220 120,140" fill="url(#baseGrad)" opacity="0.7"/>
+    <polygon points="200,100 260,140 260,200 200,240 140,200 140,140" fill="none" stroke="#00D4FF" stroke-width="3"/>
+  </g>
+  <circle cx="200" cy="160" r="25" fill="#0052FF" stroke="#00D4FF" stroke-width="2"/>
+  <text x="200" y="315" font-family="'Courier New', monospace" font-size="24" font-weight="bold" fill="#00D4FF" text-anchor="middle" letter-spacing="3">BASE</text>
+  <text x="200" y="340" font-family="'Courier New', monospace" font-size="20" fill="#0052FF" text-anchor="middle" letter-spacing="2">BUILDERS</text>
+  <text x="200" y="365" font-family="'Courier New', monospace" font-size="28" font-weight="bold" fill="#00D4FF" text-anchor="middle">#777</text>
+</svg>
