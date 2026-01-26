@@ -1,0 +1,46 @@
+{
+  "name": "BitArt Market Backend",
+  "description": "NFT Marketplace on Stacks and Celo blockchains",
+  "repository": "https://github.com/cryptonique0/BitArt-Market",
+  "keywords": ["nft", "marketplace", "stacks", "celo", "blockchain"],
+  "buildCommand": "npm run build --workspace backend",
+  "startCommand": "node backend/dist/index.js",
+  "env": {
+    "NODE_ENV": {
+      "value": "production"
+    },
+    "PORT": {
+      "value": "3001"
+    },
+    "STACKS_API_URL": {
+      "description": "Stacks API endpoint (mainnet or testnet)",
+      "value": "https://api.mainnet.stacks.co"
+    },
+    "STACKS_NETWORK": {
+      "value": "mainnet"
+    },
+    "CELO_RPC_URL": {
+      "description": "Celo RPC endpoint",
+      "value": "https://mainnet.infura.io/v3/YOUR_INFURA_KEY"
+    },
+    "CELO_CHAIN_ID": {
+      "value": "42220"
+    },
+    "PINATA_API_KEY": {
+      "description": "Pinata API key for IPFS storage"
+    },
+    "PINATA_SECRET_API_KEY": {
+      "description": "Pinata secret API key"
+    },
+    "PINATA_JWT": {
+      "description": "Pinata JWT token"
+    },
+    "CORS_ORIGIN": {
+      "description": "Frontend domain for CORS",
+      "value": "https://bitart-market.vercel.app"
+    },
+    "LOG_LEVEL": {
+      "value": "info"
+    }
+  }
+}
