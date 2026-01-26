@@ -1,0 +1,24 @@
+{
+  "buildCommand": "npm run build --workspace frontend",
+  "outputDirectory": "frontend/dist",
+  "env": {
+    "VITE_API_URL": {
+      "description": "Backend API URL",
+      "value": "https://bitart-api.onrender.com"
+    },
+    "VITE_STACKS_API_URL": {
+      "description": "Stacks API endpoint",
+      "value": "https://api.mainnet.stacks.co"
+    },
+    "VITE_STACKS_NETWORK": {
+      "value": "mainnet"
+    },
+    "VITE_CELO_RPC_URL": {
+      "description": "Celo RPC endpoint",
+      "value": "https://mainnet.infura.io/v3/YOUR_INFURA_KEY"
+    },
+    "VITE_CELO_CHAIN_ID": {
+      "value": "42220"
+    }
+  }
+}
