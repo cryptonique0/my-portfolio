@@ -1,0 +1,75 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier"
+  },
+  "nav": {
+    "home": "Accueil",
+    "discover": "Découvrir",
+    "marketplace": "Marché",
+    "create": "Créer",
+    "studio": "Studio",
+    "profile": "Profil"
+  },
+  "nft": {
+    "title": "NFT",
+    "name": "Nom",
+    "description": "Description",
+    "price": "Prix",
+    "owner": "Propriétaire",
+    "creator": "Créateur",
+    "listed": "En vente",
+    "notListed": "Pas en vente",
+    "buy": "Acheter maintenant",
+    "sell": "Vendre",
+    "transfer": "Transférer",
+    "properties": "Propriétés",
+    "history": "Historique",
+    "details": "Détails"
+  },
+  "marketplace": {
+    "title": "Marché",
+    "featured": "En vedette",
+    "trending": "Tendance",
+    "new": "Nouveau",
+    "topSellers": "Meilleurs vendeurs",
+    "collections": "Collections",
+    "volume": "Volume",
+    "floor": "Prix plancher",
+    "sales": "Ventes",
+    "items": "Articles"
+  },
+  "wallet": {
+    "connect": "Connecter le portefeuille",
+    "disconnect": "Déconnecter",
+    "balance": "Solde",
+    "network": "Réseau",
+    "wrongNetwork": "Mauvais réseau",
+    "switchNetwork": "Changer de réseau",
+    "notConnected": "Portefeuille non connecté"
+  },
+  "transaction": {
+    "pending": "Transaction en attente",
+    "confirmed": "Transaction confirmée",
+    "failed": "Transaction échouée",
+    "view": "Voir la transaction",
+    "sign": "Signer la transaction"
+  },
+  "errors": {
+    "generic": "Quelque chose s'est mal passé",
+    "network": "Erreur réseau",
+    "notFound": "Non trouvé",
+    "unauthorized": "Non autorisé",
+    "validation": "Erreur de validation"
+  }
+}
