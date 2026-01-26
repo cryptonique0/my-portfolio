@@ -1,0 +1,75 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort"
+  },
+  "nav": {
+    "home": "Home",
+    "discover": "Discover",
+    "marketplace": "Marketplace",
+    "create": "Create",
+    "studio": "Studio",
+    "profile": "Profile"
+  },
+  "nft": {
+    "title": "NFT",
+    "name": "Name",
+    "description": "Description",
+    "price": "Price",
+    "owner": "Owner",
+    "creator": "Creator",
+    "listed": "Listed",
+    "notListed": "Not Listed",
+    "buy": "Buy Now",
+    "sell": "Sell",
+    "transfer": "Transfer",
+    "properties": "Properties",
+    "history": "History",
+    "details": "Details"
+  },
+  "marketplace": {
+    "title": "Marketplace",
+    "featured": "Featured",
+    "trending": "Trending",
+    "new": "New",
+    "topSellers": "Top Sellers",
+    "collections": "Collections",
+    "volume": "Volume",
+    "floor": "Floor Price",
+    "sales": "Sales",
+    "items": "Items"
+  },
+  "wallet": {
+    "connect": "Connect Wallet",
+    "disconnect": "Disconnect",
+    "balance": "Balance",
+    "network": "Network",
+    "wrongNetwork": "Wrong Network",
+    "switchNetwork": "Switch Network",
+    "notConnected": "Wallet Not Connected"
+  },
+  "transaction": {
+    "pending": "Transaction Pending",
+    "confirmed": "Transaction Confirmed",
+    "failed": "Transaction Failed",
+    "view": "View Transaction",
+    "sign": "Sign Transaction"
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "network": "Network error",
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized",
+    "validation": "Validation error"
+  }
+}
