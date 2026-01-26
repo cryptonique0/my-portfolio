@@ -1,0 +1,14 @@
+Please save the BitArt Market logo image as:
+/home/web3joker/BitArt Market/frontend/public/images/logo.png
+
+The logo shows:
+- "BitArt MARKET" branding
+- "Base-First NFT Marketplace" tagline
+- Blue and orange geometric 3D design
+- Dark background
+
+The image is already referenced in:
+1. Header component (top navigation)
+2. HomePage hero section
+
+After placing the logo.png file, the app will automatically display it.
